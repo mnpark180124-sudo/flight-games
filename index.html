@@ -189,6 +189,15 @@
     background:var(--coral); color:#fff; border:none; border-radius:12px;
     padding:10px 22px; font-size:13.5px; font-weight:700; cursor:pointer;
   }
+  .jump-btn{
+    display:block; margin:16px auto 0; max-width:320px; width:100%;
+    background:linear-gradient(160deg, var(--sunset-2), var(--sunset));
+    color:var(--dusk); border:none; border-radius:18px;
+    padding:16px 0; font-size:16px; font-weight:800; cursor:pointer;
+    box-shadow:0 8px 20px -8px rgba(255,157,108,0.6);
+    -webkit-user-select:none; user-select:none;
+  }
+  .jump-btn:active{ transform:scale(0.97); }
 
   /* Combo popup */
   .combo-popup{
@@ -307,7 +316,7 @@
       <div class="porthole-window">🧩</div>
       <div class="porthole-text">
         <div class="porthole-title">노을이 조각 퍼즐</div>
-        <div class="porthole-desc">난이도 3단계, 밀어서 사진 맞추기</div>
+        <div class="porthole-desc">난이도 3단계, 드래그해서 사진 맞추기</div>
       </div>
     </div>
   </div>
@@ -388,6 +397,7 @@
       <button id="jumpStartBtn">시작하기</button>
     </div>
   </div>
+  <button class="jump-btn" id="jumpButton">🐥 점프!</button>
 </div>
 
 <!-- JIGSAW PUZZLE -->
@@ -537,24 +547,31 @@ function mmInit(){
     .map(v => ({v, id: Math.random()}))
     .sort(()=> Math.random()-0.5);
   mmFlipped = [];
-  mmLock = false;
+  mmLock = true; // locked during the preview
   mmTurn = "X";
   mmMatched = 0;
   mmScore = {X:0,O:0};
   document.getElementById("mmScoreX").textContent = 0;
   document.getElementById("mmScoreO").textContent = 0;
-  updateMmTurnBanner();
+  document.getElementById("mmTurn").textContent = "카드를 잘 기억하세요! 👀";
 
   const grid = document.getElementById("mmGrid");
   grid.innerHTML = "";
   mmCards.forEach((card, idx)=>{
     const el = document.createElement("div");
-    el.className = "mm-card";
+    el.className = "mm-card flipped"; // show every card face-up at the start
     el.dataset.idx = idx;
     el.innerHTML = '<div class="mm-inner"><div class="mm-face mm-back"></div><div class="mm-face mm-front">'+card.v+'</div></div>';
     el.onclick = ()=> mmFlip(idx);
     grid.appendChild(el);
   });
+
+  // after a short preview, flip everything back down and start the game
+  setTimeout(()=>{
+    document.querySelectorAll("#mmGrid .mm-card").forEach(el=> el.classList.remove("flipped"));
+    mmLock = false;
+    updateMmTurnBanner();
+  }, 2200);
 }
 function updateMmTurnBanner(){
   document.getElementById("mmTurn").textContent = mmTurn === "X" ? "✈️ 내 차례예요" : "🌙 딸 차례예요";
@@ -714,6 +731,10 @@ function jumpDoJump(){
 }
 jumpCanvas.addEventListener("touchstart", (e)=>{ e.preventDefault(); jumpDoJump(); }, {passive:false});
 jumpCanvas.addEventListener("mousedown", jumpDoJump);
+
+const jumpButtonEl = document.getElementById("jumpButton");
+jumpButtonEl.addEventListener("touchstart", (e)=>{ e.preventDefault(); jumpDoJump(); }, {passive:false});
+jumpButtonEl.addEventListener("mousedown", jumpDoJump);
 
 
 function jumpShowComboPopup(comboVal, milestone){

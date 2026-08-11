@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>국어 단어 게임 세트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#BEE6FF;
+    --sky-bottom:#FFF6DF;
+    --ink:#2B2140;
+    --card-bg:#FFFFFF;
+    --coral:#FF6F59;
+    --leaf:#4CB963;
+    --skyblue:#3AA6FF;
+    --grape:#A66CFF;
+    --lemon:#FFC93F;
+    --shadow: 0 8px 0 rgba(43,33,64,0.12);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Gowun Dodum', sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%);
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:32px 20px 60px;
+  }
+  .cloud{
+    position:absolute;
+    background:#fff;
+    border-radius:50%;
+    opacity:.8;
+  }
+  header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  h1{
+    font-family:'Jua', sans-serif;
+    font-size:clamp(28px, 7vw, 40px);
+    margin:0 0 6px;
+    letter-spacing:1px;
+  }
+  header p{
+    margin:0;
+    font-size:15px;
+    opacity:.75;
+  }
+  .grid{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .card{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:var(--card-bg);
+    border-radius:22px;
+    padding:18px 20px;
+    box-shadow: var(--shadow);
+    text-decoration:none;
+    color:var(--ink);
+    transform:translateY(0);
+    transition: transform .12s ease, box-shadow .12s ease;
+    border:3px solid transparent;
+  }
+  .card.active{ cursor:pointer; }
+  .card.active:active{
+    transform:translateY(6px);
+    box-shadow: 0 2px 0 rgba(43,33,64,0.12);
+  }
+  .card.disabled{
+    opacity:.55;
+    filter:grayscale(25%);
+    cursor:default;
+  }
+  .icon{
+    width:56px;
+    height:56px;
+    border-radius:16px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:28px;
+    flex-shrink:0;
+    color:#fff;
+  }
+  .card:nth-child(1) .icon{ background:var(--coral); }
+  .card:nth-child(2) .icon{ background:var(--leaf); }
+  .card:nth-child(3) .icon{ background:var(--skyblue); }
+  .card:nth-child(4) .icon{ background:var(--grape); }
+  .card:nth-child(5) .icon{ background:var(--lemon); }
+  .label{
+    font-family:'Jua', sans-serif;
+    font-size:18px;
+    margin-bottom:2px;
+  }
+  .desc{
+    font-size:13px;
+    opacity:.7;
+    line-height:1.4;
+  }
+  .badge{
+    position:absolute;
+    top:-8px;
+    right:14px;
+    background:var(--grape);
+    color:#fff;
+    font-family:'Jua', sans-serif;
+    font-size:11px;
+    padding:4px 10px;
+    border-radius:999px;
+    box-shadow:0 2px 0 rgba(43,33,64,0.15);
+  }
+  .badge.wait{ background:#B9B4C7; }
+  footer{
+    margin-top:36px;
+    font-size:12px;
+    opacity:.5;
+    text-align:center;
+  }
+
+  header{ position:relative; }
+  .back-link{
+    position:absolute; top:0; right:0;
+    display:flex; align-items:center; gap:4px;
+    background:rgba(255,255,255,0.7); border:2px solid rgba(43,33,64,0.12);
+    color:#2B2140; text-decoration:none;
+    font-family:'Gowun Dodum', sans-serif;
+    font-size:12px; font-weight:700; padding:8px 12px; border-radius:999px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <a class="back-link" href="../index.html">← 미니게임</a>
+    <h1>🧩 국어 단어 게임 세트</h1>
+    <p>1~2학년 친구들을 위한 낱말 놀이터예요</p>
+  </header>
+
+  <div class="grid">
+    <a class="card active" href="chain.html">
+      <div class="icon">🔤</div>
+      <div>
+        <div class="label">낱말 퍼즐</div>
+        <div class="desc">끝말잇기로 낱말을 이어봐요</div>
+      </div>
+    </a>
+
+    <a class="card active" href="dictation.html">
+      <div class="icon">✏️</div>
+      <div>
+        <div class="label">조사 넣기</div>
+        <div class="desc">( ) 안에 어울리는 조사를 골라요</div>
+      </div>
+    </a>
+
+    <a class="card active" href="picture.html">
+      <div class="icon">🖼️</div>
+      <div>
+        <div class="label">그림보고 단어맞추기</div>
+        <div class="desc">그림을 보고 낱말을 골라요</div>
+      </div>
+    </a>
+
+    <a class="card active" href="jamo.html">
+      <div class="icon">🧱</div>
+      <div>
+        <div class="label">자모 순서 맞추기</div>
+        <div class="desc">흩어진 글자 조각을 순서대로 맞춰요</div>
+      </div>
+    </a>
+
+    <a class="card active" href="fillblank.html">
+      <div class="icon">📝</div>
+      <div>
+        <div class="label">빈칸 채우기</div>
+        <div class="desc">문장 속 빈칸에 낱말을 넣어요</div>
+      </div>
+    </a>
+  </div>
+
+  <footer>국어 단어 게임 세트 · 5개 게임 완성!</footer>
+</body>
+</html>

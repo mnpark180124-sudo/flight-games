@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>자모 순서 맞추기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#BEE6FF;
+    --sky-bottom:#FFF6DF;
+    --ink:#2B2140;
+    --card-bg:#FFFFFF;
+    --coral:#FF6F59;
+    --leaf:#4CB963;
+    --skyblue:#3AA6FF;
+    --grape:#A66CFF;
+    --lemon:#FFC93F;
+    --pink:#FF6F91;
+    --wrong:#FF4D4D;
+    --shadow: 0 6px 0 rgba(43,33,64,0.15);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Gowun Dodum', sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%);
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:16px 16px 50px;
+  }
+  .topbar{
+    width:100%;
+    max-width:460px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .home-btn{
+    font-family:'Jua', sans-serif;
+    font-size:14px;
+    color:var(--ink);
+    text-decoration:none;
+    background:#fff;
+    padding:8px 14px;
+    border-radius:14px;
+    box-shadow:0 3px 0 rgba(43,33,64,0.12);
+  }
+  .progress{
+    font-family:'Jua', sans-serif;
+    font-size:14px;
+    background:#fff;
+    padding:8px 14px;
+    border-radius:14px;
+    box-shadow:0 3px 0 rgba(43,33,64,0.12);
+  }
+  h1{
+    font-family:'Jua', sans-serif;
+    font-size:clamp(22px,6vw,30px);
+    margin:6px 0 18px;
+    text-align:center;
+  }
+
+  .section-label{
+    font-family:'Jua', sans-serif;
+    font-size:13px;
+    opacity:.6;
+    margin-bottom:8px;
+  }
+
+  .target-card{
+    background:#fff;
+    border-radius:20px;
+    padding:14px 30px;
+    box-shadow: var(--shadow);
+    font-family:'Jua', sans-serif;
+    font-size:32px;
+    color:var(--skyblue);
+    letter-spacing:4px;
+    margin-bottom:22px;
+    border:3px solid #DCEFFF;
+  }
+
+  .build-card{
+    min-width:220px;
+    min-height:64px;
+    border-radius:20px;
+    border:3px dashed #C9C0DB;
+    background:rgba(255,255,255,.55);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Jua', sans-serif;
+    font-size:32px;
+    letter-spacing:4px;
+    color:var(--ink);
+    padding:10px 26px;
+    margin-bottom:8px;
+    transition: border-color .2s ease, background .2s ease;
+  }
+  .build-card.growing{
+    border-style:solid;
+    border-color:transparent;
+    background:#fff;
+    box-shadow: var(--shadow);
+  }
+  .build-card span{
+    display:inline-block;
+    animation: pop .22s ease;
+  }
+  @keyframes pop{
+    0%{ transform:scale(.6); }
+    70%{ transform:scale(1.15); }
+    100%{ transform:scale(1); }
+  }
+  .build-empty{ font-size:14px; opacity:.45; letter-spacing:0; }
+
+  .tray{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:10px;
+    max-width:460px;
+    margin:22px 0 26px;
+  }
+  .tile{
+    width:56px;
+    height:56px;
+    border-radius:14px;
+    border:none;
+    font-family:'Jua', sans-serif;
+    font-size:24px;
+    color:#fff;
+    box-shadow: var(--shadow);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition: transform .08s ease;
+  }
+  .tile:active{ transform: translateY(4px); box-shadow:0 2px 0 rgba(43,33,64,0.15); }
+  .tile.used{ visibility:hidden; }
+  .tile.shake{ animation: shake .32s ease; }
+  @keyframes shake{
+    0%,100%{ transform: translateX(0); }
+    25%{ transform: translateX(-6px); }
+    75%{ transform: translateX(6px); }
+  }
+  .tile.c0{ background:var(--coral); }
+  .tile.c1{ background:var(--leaf); }
+  .tile.c2{ background:var(--skyblue); }
+  .tile.c3{ background:var(--grape); }
+  .tile.c4{ background:var(--lemon); color:var(--ink); }
+  .tile.c5{ background:var(--pink); }
+
+  .controls{
+    display:flex;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .btn{
+    font-family:'Jua', sans-serif;
+    font-size:14px;
+    padding:10px 18px;
+    border-radius:16px;
+    border:none;
+    background:#fff;
+    color:var(--ink);
+    box-shadow:0 3px 0 rgba(43,33,64,0.12);
+    cursor:pointer;
+  }
+  .btn:active{ transform:translateY(3px); box-shadow:none; }
+
+  @keyframes floatUp{
+    0%{ transform:translate(-50%,-50%) scale(.5); opacity:0; }
+    15%{ transform:translate(-50%,-60%) scale(1.1); opacity:1; }
+    80%{ transform:translate(-50%,-90%) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-110%) scale(.9); opacity:0; }
+  }
+  .fx-toast{
+    position:fixed; left:50%; top:38%; z-index:999; pointer-events:none;
+    font-family:'Jua', sans-serif; font-size:22px; padding:10px 20px; border-radius:20px;
+    box-shadow:0 6px 0 rgba(43,33,64,0.15); animation: floatUp .9s ease forwards; white-space:nowrap;
+  }
+  .fx-toast.good{ background:var(--leaf); color:#fff; }
+  .fx-toast.bad{ background:var(--wrong); color:#fff; }
+  .fx-confetti{ position:fixed; z-index:998; pointer-events:none; font-size:22px; animation: confettiFly .8s ease-out forwards; }
+  @keyframes confettiFly{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+    100%{ transform:translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.6); opacity:0; }
+  }
+
+  .overlay{
+    position:fixed;
+    inset:0;
+    background:rgba(43,33,64,0.35);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .overlay.show{ display:flex; }
+  .overlay-card{
+    background:#fff;
+    border-radius:24px;
+    padding:30px 28px;
+    text-align:center;
+    max-width:320px;
+    box-shadow:0 10px 0 rgba(43,33,64,0.15);
+  }
+  .overlay-card .word{
+    font-family:'Jua', sans-serif;
+    font-size:34px;
+    margin:8px 0 4px;
+    color:var(--coral);
+  }
+  .overlay-card .msg{
+    font-family:'Jua', sans-serif;
+    font-size:18px;
+    margin-bottom:10px;
+  }
+  .overlay-card button{
+    margin-top:14px;
+    font-family:'Jua', sans-serif;
+    font-size:15px;
+    padding:12px 26px;
+    border-radius:16px;
+    border:none;
+    background:var(--leaf);
+    color:#fff;
+    box-shadow:0 4px 0 rgba(43,33,64,0.2);
+    cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home-btn" href="index.html">🏠 홈</a>
+    <div class="progress" id="progress">1 / 10</div>
+  </div>
+
+  <h1>🧱 자모 순서 맞추기</h1>
+
+  <div class="section-label">🎯 이 낱말을 만들어보세요</div>
+  <div class="target-card" id="targetCard"></div>
+
+  <div class="section-label">✍️ 내가 만드는 낱말</div>
+  <div class="build-card" id="buildCard"><span class="build-empty">조각을 눌러보세요</span></div>
+
+  <div class="tray" id="tray"></div>
+
+  <div class="controls">
+    <button class="btn" id="hintBtn">💡 힌트</button>
+    <button class="btn" id="shuffleBtn">🔀 다시 섞기</button>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="msg">참 잘했어요! 🎉</div>
+      <div class="word" id="overlayWord"></div>
+      <button id="nextBtn">다음 낱말 ▶</button>
+    </div>
+  </div>
+
+<script>
+// ---- 한글 자모 분해/조합 ----
+const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+
+function composeSyllable(choIdx, jungIdx, jongIdx){
+  return String.fromCharCode(0xAC00 + (choIdx*21 + jungIdx)*28 + jongIdx);
+}
+
+// 단어 -> 음절별 구조 [{cho, jung, jong, comps:[자모,...]}]
+function decomposeStructured(word){
+  const syllables = [];
+  for(const ch of word){
+    const code = ch.charCodeAt(0) - 0xAC00;
+    if(code < 0 || code > 11171){ continue; }
+    const cho = Math.floor(code / (21*28));
+    const jung = Math.floor((code % (21*28)) / 28);
+    const jong = code % 28;
+    const comps = [CHO[cho], JUNG[jung]];
+    if(jong !== 0) comps.push(JONG[jong]);
+    syllables.push({ cho, jung, jong, comps });
+  }
+  return syllables;
+}
+
+// ---- 낱말 목록 (1~2학년 수준) ----
+const WORDS = ['계단','학교','친구','나무','사과','우산','딸기','그림','바다','구름',
+  '병아리','참새','호랑이','물고기','무지개','눈사람','강아지','고양이','자전거','안경',
+  '시계','책상','의자','연필','모자','토끼','다람쥐','거북이','나비','우유'];
+
+function shuffleArr(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+// ---- 게임 상태 ----
+const TOTAL_ROUNDS = 10;
+let roundWords = [];
+let roundIndex = 0;
+let syllables = [];   // 현재 단어의 음절 구조
+let expected = [];    // 평탄화된 자모 순서
+let placedCount = 0;
+let tileState = [];   // {id, char, used}
+
+const targetCard = document.getElementById('targetCard');
+const buildCard = document.getElementById('buildCard');
+const trayEl = document.getElementById('tray');
+const progressEl = document.getElementById('progress');
+const overlay = document.getElementById('overlay');
+const overlayWord = document.getElementById('overlayWord');
+
+function playChime(good){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const notes = good ? [523.25,659.25,783.99] : [220,196];
+    notes.forEach((f,i)=>{
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = good ? 'sine' : 'sawtooth'; o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i*(good?0.11:0.09);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(good?0.18:0.12, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+(good?0.28:0.18));
+      o.start(t); o.stop(t+(good?0.3:0.2));
+    });
+  }catch(e){}
+}
+function showToast(text, good){
+  const el = document.createElement('div');
+  el.className = 'fx-toast ' + (good?'good':'bad');
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+const GOOD_EMOJIS = ['⭐','🎉','✨','🌟','👏'];
+function burstConfetti(x, y, good){
+  const emojis = good ? GOOD_EMOJIS : ['💧'];
+  const count = good ? 8 : 3;
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'fx-confetti';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    const angle = Math.random()*Math.PI*2;
+    const dist = 40 + Math.random()*50;
+    el.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle)*dist - 20 + 'px');
+    el.style.setProperty('--rot', (Math.random()*360-180) + 'deg');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+}
+function feedbackEffect(isCorrect, el){
+  const rect = el.getBoundingClientRect();
+  const x = rect.left + rect.width/2, y = rect.top + rect.height/2;
+  burstConfetti(x, y, isCorrect);
+  playChime(isCorrect);
+  if(!isCorrect) showToast('다시 해봐요!', false);
+  if(navigator.vibrate) navigator.vibrate(isCorrect ? 25 : [30,40,30]);
+}
+function celebrateFinish(){
+  const cx = window.innerWidth/2, cy = window.innerHeight*0.35;
+  for(let i=0;i<18;i++){
+    setTimeout(() => burstConfetti(cx + (Math.random()*160-80), cy + (Math.random()*60-30), true), i*30);
+  }
+  showToast(['참 잘했어요!','정답이에요!','최고예요!'][Math.floor(Math.random()*3)], true);
+  playChime(true);
+}
+
+function pickRounds(){
+  roundWords = shuffleArr(WORDS).slice(0, TOTAL_ROUNDS);
+}
+
+function startRound(){
+  const word = roundWords[roundIndex];
+  syllables = decomposeStructured(word);
+  expected = syllables.flatMap(s => s.comps);
+  placedCount = 0;
+  progressEl.textContent = `${roundIndex+1} / ${TOTAL_ROUNDS}`;
+
+  targetCard.textContent = word;
+  renderBuild();
+
+  // 타일 상태 생성 (섞기)
+  tileState = expected.map((ch, i) => ({ id: i, char: ch, used: false }));
+  renderTray(shuffleArr(tileState.map(t => t.id)));
+}
+
+function renderTray(order){
+  trayEl.innerHTML = '';
+  order.forEach(id => {
+    const t = tileState.find(x => x.id === id);
+    const btn = document.createElement('button');
+    btn.className = 'tile c' + (id % 6);
+    btn.textContent = t.char;
+    btn.dataset.id = id;
+    if(t.used) btn.classList.add('used');
+    btn.addEventListener('click', () => onTileTap(id, btn));
+    trayEl.appendChild(btn);
+  });
+}
+
+// 지금까지 놓은 자모 개수(placedCount)를 바탕으로 조합된 낱말 문자열 계산
+function buildDisplayString(){
+  const word = roundWords[roundIndex];
+  let idx = 0;
+  let completed = '';
+  let partial = '';
+  for(let s = 0; s < syllables.length; s++){
+    const syl = syllables[s];
+    const len = syl.comps.length;
+    if(idx + len <= placedCount){
+      completed += word[s];
+      idx += len;
+    } else {
+      const placedInSyl = placedCount - idx;
+      if(placedInSyl === 1){
+        partial = syl.comps[0]; // 초성만 놓인 상태
+      } else if(placedInSyl === 2){
+        partial = composeSyllable(syl.cho, syl.jung, 0); // 받침 전 상태
+      }
+      break;
+    }
+  }
+  return completed + partial;
+}
+
+function renderBuild(){
+  const str = buildDisplayString();
+  if(str.length === 0){
+    buildCard.classList.remove('growing');
+    buildCard.innerHTML = '<span class="build-empty">조각을 눌러보세요</span>';
+  } else {
+    buildCard.classList.add('growing');
+    buildCard.innerHTML = '<span>' + str + '</span>';
+  }
+}
+
+function onTileTap(id, btn){
+  const t = tileState.find(x => x.id === id);
+  if(t.used) return;
+  if(t.char === expected[placedCount]){
+    feedbackEffect(true, btn);
+    t.used = true;
+    btn.classList.add('used');
+    placedCount++;
+    renderBuild();
+    if(placedCount === expected.length){
+      setTimeout(showComplete, 350);
+    }
+  } else {
+    feedbackEffect(false, btn);
+    btn.classList.remove('shake');
+    void btn.offsetWidth;
+    btn.classList.add('shake');
+  }
+}
+
+function showComplete(){
+  overlayWord.textContent = roundWords[roundIndex];
+  overlay.classList.add('show');
+  celebrateFinish();
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  roundIndex++;
+  if(roundIndex >= TOTAL_ROUNDS){
+    roundIndex = 0;
+    pickRounds();
+  }
+  startRound();
+});
+
+document.getElementById('shuffleBtn').addEventListener('click', () => {
+  const remainingIds = tileState.filter(t => !t.used).map(t => t.id);
+  const usedIds = tileState.filter(t => t.used).map(t => t.id);
+  renderTray(shuffleArr([...remainingIds, ...usedIds]));
+});
+
+document.getElementById('hintBtn').addEventListener('click', () => {
+  if(placedCount >= expected.length) return;
+  const nextChar = expected[placedCount];
+  const btns = [...trayEl.querySelectorAll('.tile')];
+  const target = btns.find(b => {
+    const t = tileState.find(x => x.id == b.dataset.id);
+    return !t.used && t.char === nextChar;
+  });
+  if(target){
+    target.style.transition = 'transform .18s ease';
+    target.style.transform = 'scale(1.25)';
+    setTimeout(() => { target.style.transform = 'scale(1)'; }, 350);
+  }
+});
+
+pickRounds();
+startRound();
+</script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>낱말 퍼즐 - 끝말잇기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#BEE6FF; --sky-bottom:#FFF6DF; --ink:#2B2140;
+    --coral:#FF6F59; --leaf:#4CB963; --skyblue:#3AA6FF; --grape:#A66CFF; --lemon:#FFC93F; --pink:#FF6F91;
+    --shadow: 0 6px 0 rgba(43,33,64,0.15);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  body{
+    margin:0; min-height:100vh; font-family:'Gowun Dodum', sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%);
+    color:var(--ink); display:flex; flex-direction:column; align-items:center; padding:16px 16px 50px;
+  }
+  .topbar{ width:100%; max-width:460px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .home-btn, .progress{
+    font-family:'Jua', sans-serif; font-size:14px; background:#fff; padding:8px 14px; border-radius:14px;
+    box-shadow:0 3px 0 rgba(43,33,64,0.12); text-decoration:none; color:var(--ink);
+  }
+  h1{ font-family:'Jua', sans-serif; font-size:clamp(22px,6vw,30px); margin:6px 0 6px; text-align:center; }
+  .hint-text{ font-size:13px; opacity:.65; margin-bottom:20px; text-align:center; }
+
+  .chain-track{
+    display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:24px; max-width:460px;
+  }
+  .chip{
+    font-family:'Jua', sans-serif; font-size:14px; background:#fff; padding:8px 14px; border-radius:999px;
+    box-shadow:0 3px 0 rgba(43,33,64,0.1); opacity:.4;
+  }
+  .chip.done{ opacity:1; background:var(--leaf); color:#fff; }
+  .chip.current{ opacity:1; background:var(--coral); color:#fff; transform:scale(1.08); }
+
+  .current-word{
+    font-family:'Jua', sans-serif; font-size:44px; background:#fff; border-radius:22px;
+    padding:16px 28px; box-shadow: var(--shadow); margin-bottom:8px;
+  }
+  .arrow-hint{ font-size:14px; opacity:.7; margin-bottom:22px; text-align:center; }
+  .arrow-hint b{ color:var(--coral); font-size:18px; }
+
+  .options{
+    display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:400px; margin-bottom:8px;
+  }
+  .opt{
+    font-family:'Jua', sans-serif; font-size:19px; color:#fff; border:none; border-radius:16px;
+    padding:18px 10px; box-shadow: var(--shadow); cursor:pointer; transition: transform .08s ease;
+  }
+  .opt:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(43,33,64,0.15); }
+  .opt.c0{ background:var(--coral);} .opt.c1{ background:var(--leaf);} .opt.c2{ background:var(--skyblue);} .opt.c3{ background:var(--grape);}
+  .opt.wrong{ animation: shake .32s ease; }
+  .opt.correct{ animation: pop .3s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  @keyframes pop{ 0%{transform:scale(.85);} 70%{transform:scale(1.08);} 100%{transform:scale(1);} }
+
+  @keyframes floatUp{
+    0%{ transform:translate(-50%,-50%) scale(.5); opacity:0; }
+    15%{ transform:translate(-50%,-60%) scale(1.1); opacity:1; }
+    80%{ transform:translate(-50%,-90%) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-110%) scale(.9); opacity:0; }
+  }
+  .fx-toast{
+    position:fixed; left:50%; top:38%; z-index:999; pointer-events:none;
+    font-family:'Jua', sans-serif; font-size:22px; padding:10px 20px; border-radius:20px;
+    box-shadow:0 6px 0 rgba(43,33,64,0.15); animation: floatUp .9s ease forwards; white-space:nowrap;
+  }
+  .fx-toast.good{ background:var(--leaf); color:#fff; }
+  .fx-toast.bad{ background:#FF4D4D; color:#fff; }
+  .fx-confetti{ position:fixed; z-index:998; pointer-events:none; font-size:22px; animation: confettiFly .8s ease-out forwards; }
+  @keyframes confettiFly{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+    100%{ transform:translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.6); opacity:0; }
+  }
+
+  .overlay{ position:fixed; inset:0; background:rgba(43,33,64,0.35); display:none; align-items:center; justify-content:center; padding:20px; }
+  .overlay.show{ display:flex; }
+  .overlay-card{ background:#fff; border-radius:24px; padding:30px 28px; text-align:center; max-width:340px; box-shadow:0 10px 0 rgba(43,33,64,0.15); }
+  .overlay-card .msg{ font-family:'Jua', sans-serif; font-size:18px; margin-bottom:10px; }
+  .overlay-card .chainwords{ font-family:'Jua', sans-serif; font-size:20px; color:var(--coral); line-height:1.6; }
+  .overlay-card button{
+    margin-top:16px; font-family:'Jua', sans-serif; font-size:15px; padding:12px 26px; border-radius:16px;
+    border:none; background:var(--leaf); color:#fff; box-shadow:0 4px 0 rgba(43,33,64,0.2); cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home-btn" href="index.html">🏠 홈</a>
+    <div class="progress" id="progress">체인 1 / 6</div>
+  </div>
+
+  <h1>🔤 낱말 퍼즐 (끝말잇기)</h1>
+  <div class="hint-text">앞 낱말의 끝 글자로 시작하는 낱말을 골라보세요</div>
+
+  <div class="chain-track" id="chainTrack"></div>
+
+  <div class="current-word" id="currentWord">사과</div>
+  <div class="arrow-hint">다음 낱말은 <b id="reqChar">과</b> (으)로 시작해요</div>
+
+  <div class="options" id="options"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="msg">체인 완성! 🎉</div>
+      <div class="chainwords" id="overlayChain"></div>
+      <button id="nextBtn">다음 체인 ▶</button>
+    </div>
+  </div>
+
+<script>
+const CHAINS = [
+  ['사과','과자','자동차','차림표','표범'],
+  ['나무','무지개','개구리','리본','본보기'],
+  ['우산','산타','타조','조개','개미'],
+  ['거북이','이불','불고기','기차','차표'],
+  ['딸기','기타','타이어','어항','항구'],
+  ['참새','새우','우유','유치원','원숭이']
+];
+const ALL_WORDS = [...new Set(CHAINS.flat())];
+
+let chainOrder = [];
+let chainIdx = 0;
+let wordIdx = 0;
+
+function shuffleArr(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function playChime(good){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const notes = good ? [523.25,659.25,783.99] : [220,196];
+    notes.forEach((f,i)=>{
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = good ? 'sine' : 'sawtooth'; o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i*(good?0.11:0.09);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(good?0.18:0.12, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+(good?0.28:0.18));
+      o.start(t); o.stop(t+(good?0.3:0.2));
+    });
+  }catch(e){}
+}
+function showToast(text, good){
+  const el = document.createElement('div');
+  el.className = 'fx-toast ' + (good?'good':'bad');
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+const GOOD_EMOJIS = ['⭐','🎉','✨','🌟','👏'];
+function burstConfetti(x, y, good){
+  const emojis = good ? GOOD_EMOJIS : ['💧'];
+  const count = good ? 10 : 4;
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'fx-confetti';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    const angle = Math.random()*Math.PI*2;
+    const dist = 60 + Math.random()*70;
+    el.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle)*dist - 30 + 'px');
+    el.style.setProperty('--rot', (Math.random()*360-180) + 'deg');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+}
+function feedbackEffect(isCorrect, btn){
+  const rect = btn.getBoundingClientRect();
+  const x = rect.left + rect.width/2, y = rect.top + rect.height/2;
+  burstConfetti(x, y, isCorrect);
+  showToast(isCorrect ? ['참 잘했어요!','정답이에요!','최고예요!'][Math.floor(Math.random()*3)] : '괜찮아요, 다시!', isCorrect);
+  playChime(isCorrect);
+  if(navigator.vibrate) navigator.vibrate(isCorrect ? 40 : [30,40,30]);
+}
+function celebrateFinish(){
+  const cx = window.innerWidth/2, cy = window.innerHeight*0.35;
+  for(let i=0;i<18;i++){
+    setTimeout(() => burstConfetti(cx + (Math.random()*160-80), cy + (Math.random()*60-30), true), i*30);
+  }
+  playChime(true);
+}
+
+const currentWordEl = document.getElementById('currentWord');
+const reqCharEl = document.getElementById('reqChar');
+const optionsEl = document.getElementById('options');
+const progressEl = document.getElementById('progress');
+const chainTrackEl = document.getElementById('chainTrack');
+const overlay = document.getElementById('overlay');
+const overlayChain = document.getElementById('overlayChain');
+
+function initGame(){
+  chainOrder = shuffleArr([0,1,2,3,4,5]);
+  chainIdx = 0;
+  startChain();
+}
+
+function startChain(){
+  wordIdx = 0;
+  progressEl.textContent = `체인 ${chainIdx+1} / 6`;
+  renderTrack();
+  renderRound();
+}
+
+function currentChain(){
+  return CHAINS[chainOrder[chainIdx]];
+}
+
+function renderTrack(){
+  const chain = currentChain();
+  chainTrackEl.innerHTML = '';
+  chain.forEach((w,i) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip';
+    if(i < wordIdx+1) chip.classList.add('done');
+    if(i === wordIdx) { chip.classList.remove('done'); chip.classList.add('current'); }
+    chip.textContent = w;
+    chainTrackEl.appendChild(chip);
+  });
+}
+
+function renderRound(){
+  const chain = currentChain();
+  const cur = chain[wordIdx];
+  const correct = chain[wordIdx+1];
+  currentWordEl.textContent = cur;
+  const reqChar = cur.slice(-1);
+  reqCharEl.textContent = reqChar;
+
+  // 오답 후보: 요구 글자로 시작하지 않는 다른 단어
+  const pool = ALL_WORDS.filter(w => w !== cur && w !== correct && w.charAt(0) !== reqChar);
+  const distractors = shuffleArr(pool).slice(0,3);
+  const opts = shuffleArr([correct, ...distractors]);
+
+  optionsEl.innerHTML = '';
+  opts.forEach((w, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt c' + (i % 4);
+    btn.textContent = w;
+    btn.addEventListener('click', () => onPick(w === correct, btn));
+    optionsEl.appendChild(btn);
+  });
+}
+
+function onPick(isCorrect, btn){
+  feedbackEffect(isCorrect, btn);
+  if(isCorrect){
+    btn.classList.add('correct');
+    optionsEl.querySelectorAll('.opt').forEach(b => b.disabled = true);
+    setTimeout(() => {
+      wordIdx++;
+      renderTrack();
+      const chain = currentChain();
+      if(wordIdx === chain.length - 1){
+        showChainComplete();
+      } else {
+        renderRound();
+      }
+    }, 350);
+  } else {
+    btn.classList.add('wrong');
+    setTimeout(() => btn.classList.remove('wrong'), 320);
+  }
+}
+
+function showChainComplete(){
+  overlayChain.textContent = currentChain().join(' → ');
+  overlay.classList.add('show');
+  celebrateFinish();
+}
+
+document.getElementById('nextBtn').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  chainIdx++;
+  if(chainIdx >= chainOrder.length){
+    initGame();
+  } else {
+    startChain();
+  }
+});
+
+initGame();
+</script>
+</body>
+</html>

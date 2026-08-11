@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>조사 넣기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#BEE6FF; --sky-bottom:#FFF6DF; --ink:#2B2140;
+    --coral:#FF6F59; --leaf:#4CB963; --skyblue:#3AA6FF; --grape:#A66CFF;
+    --shadow: 0 6px 0 rgba(43,33,64,0.15);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  body{
+    margin:0; min-height:100vh; font-family:'Gowun Dodum', sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%);
+    color:var(--ink); display:flex; flex-direction:column; align-items:center; padding:16px 16px 50px;
+  }
+  .topbar{ width:100%; max-width:460px; display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .home-btn, .progress{
+    font-family:'Jua', sans-serif; font-size:14px; background:#fff; padding:8px 14px; border-radius:14px;
+    box-shadow:0 3px 0 rgba(43,33,64,0.12); text-decoration:none; color:var(--ink);
+  }
+  h1{ font-family:'Jua', sans-serif; font-size:clamp(22px,6vw,30px); margin:6px 0 6px; text-align:center; }
+  .hint-text{ font-size:13px; opacity:.65; margin-bottom:22px; text-align:center; }
+
+  .sentence-card{
+    width:100%; max-width:400px; background:#fff; border-radius:22px; padding:30px 20px;
+    box-shadow: var(--shadow); font-family:'Jua', sans-serif; font-size:23px; text-align:center;
+    line-height:1.8; margin-bottom:28px;
+  }
+  .blank{
+    display:inline-block; min-width:44px; color:var(--coral); font-weight:bold;
+  }
+
+  .options{ display:grid; grid-template-columns:1fr 1fr; gap:12px; width:100%; max-width:340px; }
+  .opt{
+    font-family:'Jua', sans-serif; font-size:22px; color:#fff; border:none; border-radius:16px;
+    padding:18px 10px; box-shadow: var(--shadow); cursor:pointer; transition: transform .08s ease;
+  }
+  .opt:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(43,33,64,0.15); }
+  .opt.c0{ background:var(--coral);} .opt.c1{ background:var(--leaf);} .opt.c2{ background:var(--skyblue);} .opt.c3{ background:var(--grape);}
+  .opt.wrong{ animation: shake .32s ease; }
+  .opt.correct{ animation: pop .3s ease; }
+  @keyframes shake{ 0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);} }
+  @keyframes pop{ 0%{transform:scale(.85);} 70%{transform:scale(1.08);} 100%{transform:scale(1);} }
+
+  @keyframes floatUp{
+    0%{ transform:translate(-50%,-50%) scale(.5); opacity:0; }
+    15%{ transform:translate(-50%,-60%) scale(1.1); opacity:1; }
+    80%{ transform:translate(-50%,-90%) scale(1); opacity:1; }
+    100%{ transform:translate(-50%,-110%) scale(.9); opacity:0; }
+  }
+  .fx-toast{
+    position:fixed; left:50%; top:38%; z-index:999; pointer-events:none;
+    font-family:'Jua', sans-serif; font-size:22px; padding:10px 20px; border-radius:20px;
+    box-shadow:0 6px 0 rgba(43,33,64,0.15); animation: floatUp .9s ease forwards; white-space:nowrap;
+  }
+  .fx-toast.good{ background:var(--leaf); color:#fff; }
+  .fx-toast.bad{ background:#FF4D4D; color:#fff; }
+  .fx-confetti{ position:fixed; z-index:998; pointer-events:none; font-size:22px; animation: confettiFly .8s ease-out forwards; }
+  @keyframes confettiFly{
+    0%{ transform:translate(0,0) rotate(0deg) scale(1); opacity:1; }
+    100%{ transform:translate(var(--dx), var(--dy)) rotate(var(--rot)) scale(.6); opacity:0; }
+  }
+
+  .overlay{ position:fixed; inset:0; background:rgba(43,33,64,0.35); display:none; align-items:center; justify-content:center; padding:20px; }
+  .overlay.show{ display:flex; }
+  .overlay-card{ background:#fff; border-radius:24px; padding:30px 28px; text-align:center; max-width:320px; box-shadow:0 10px 0 rgba(43,33,64,0.15); }
+  .overlay-card .msg{ font-family:'Jua', sans-serif; font-size:18px; margin-bottom:10px; }
+  .overlay-card .score{ font-family:'Jua', sans-serif; font-size:28px; color:var(--coral); margin-bottom:8px; }
+  .overlay-card button{
+    margin-top:14px; font-family:'Jua', sans-serif; font-size:15px; padding:12px 26px; border-radius:16px;
+    border:none; background:var(--leaf); color:#fff; box-shadow:0 4px 0 rgba(43,33,64,0.2); cursor:pointer;
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home-btn" href="index.html">🏠 홈</a>
+    <div class="progress" id="progress">1 / 10</div>
+  </div>
+
+  <h1>✏️ 조사 넣기</h1>
+  <div class="hint-text">( ) 안에 들어갈 알맞은 말을 골라보세요</div>
+
+  <div class="sentence-card" id="sentenceCard"></div>
+  <div class="options" id="options"></div>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-card">
+      <div class="msg">다 풀었어요! 🎉</div>
+      <div class="score" id="scoreText"></div>
+      <button id="restartBtn">다시 하기 ▶</button>
+    </div>
+  </div>
+
+<script>
+// 문장, 정답 조사, 보기 4개 (정답 포함)
+const ITEMS = [
+  {sentence:['나는 사과', ' 먹어요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['나는 밥', ' 먹어요.'], answer:'을', options:['을','를','이','가']},
+  {sentence:['하늘에 구름', ' 떠 있어요.'], answer:'이', options:['이','가','을','를']},
+  {sentence:['나무에 사과', ' 열렸어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['나', ' 학교에 가요.'], answer:'는', options:['는','은','이','가']},
+  {sentence:['오늘 날씨', ' 참 좋아요.'], answer:'는', options:['는','은','이','가']},
+  {sentence:['책', ' 재미있어요.'], answer:'은', options:['은','는','이','가']},
+  {sentence:['우산', ' 필요해요.'], answer:'이', options:['이','가','을','를']},
+  {sentence:['나는 물', ' 마셔요.'], answer:'을', options:['을','를','이','가']},
+  {sentence:['나는 우유', ' 마셔요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['친구', ' 만났어요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['나는 연필', ' 샀어요.'], answer:'을', options:['을','를','이','가']},
+  {sentence:['학교', ' 도착했어요.'], answer:'에', options:['에','에서','을','를']},
+  {sentence:['학교', ' 공부해요.'], answer:'에서', options:['에서','에','을','를']},
+  {sentence:['공원', ' 산책해요.'], answer:'에서', options:['에서','에','이','가']},
+  {sentence:['침대', ' 누웠어요.'], answer:'에', options:['에','에서','을','를']},
+  {sentence:['나는 자전거', ' 타요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['강아지', ' 짖어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['고양이', ' 야옹야옹 울어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['나는 딸기', ' 좋아해요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['하늘', ' 무지개가 떴어요.'], answer:'에', options:['에','에서','이','가']},
+  {sentence:['겨울', ' 눈이 와요.'], answer:'에', options:['에','에서','을','를']},
+  {sentence:['나는 안경', ' 썼어요.'], answer:'을', options:['을','를','이','가']},
+  {sentence:['지금', ' 여덟 시예요.'], answer:'은', options:['은','는','이','가']},
+  {sentence:['병아리', ' 삐약삐약 울어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['나는 물고기', ' 보았어요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['참새', ' 짹짹 울어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['나는 토끼', ' 키워요.'], answer:'를', options:['를','을','이','가']},
+  {sentence:['다람쥐', ' 도토리를 먹어요.'], answer:'가', options:['가','이','을','를']},
+  {sentence:['나는 모자', ' 썼어요.'], answer:'를', options:['를','을','이','가']}
+];
+const TOTAL = 10;
+
+let rounds = [];
+let idx = 0;
+let correctCount = 0;
+
+const sentenceCard = document.getElementById('sentenceCard');
+const optionsEl = document.getElementById('options');
+const progressEl = document.getElementById('progress');
+const overlay = document.getElementById('overlay');
+const scoreText = document.getElementById('scoreText');
+
+function shuffleArr(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+
+function playChime(good){
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const notes = good ? [523.25,659.25,783.99] : [220,196];
+    notes.forEach((f,i)=>{
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = good ? 'sine' : 'sawtooth'; o.frequency.value = f;
+      o.connect(g); g.connect(ctx.destination);
+      const t = ctx.currentTime + i*(good?0.11:0.09);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(good?0.18:0.12, t+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t+(good?0.28:0.18));
+      o.start(t); o.stop(t+(good?0.3:0.2));
+    });
+  }catch(e){}
+}
+function showToast(text, good){
+  const el = document.createElement('div');
+  el.className = 'fx-toast ' + (good?'good':'bad');
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+const GOOD_EMOJIS = ['⭐','🎉','✨','🌟','👏'];
+function burstConfetti(x, y, good){
+  const emojis = good ? GOOD_EMOJIS : ['💧'];
+  const count = good ? 10 : 4;
+  for(let i=0;i<count;i++){
+    const el = document.createElement('div');
+    el.className = 'fx-confetti';
+    el.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    const angle = Math.random()*Math.PI*2;
+    const dist = 60 + Math.random()*70;
+    el.style.setProperty('--dx', Math.cos(angle)*dist + 'px');
+    el.style.setProperty('--dy', Math.sin(angle)*dist - 30 + 'px');
+    el.style.setProperty('--rot', (Math.random()*360-180) + 'deg');
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 850);
+  }
+}
+function feedbackEffect(isCorrect, btn){
+  const rect = btn.getBoundingClientRect();
+  const x = rect.left + rect.width/2, y = rect.top + rect.height/2;
+  burstConfetti(x, y, isCorrect);
+  showToast(isCorrect ? ['참 잘했어요!','정답이에요!','최고예요!'][Math.floor(Math.random()*3)] : '괜찮아요, 다시!', isCorrect);
+  playChime(isCorrect);
+  if(navigator.vibrate) navigator.vibrate(isCorrect ? 40 : [30,40,30]);
+}
+function celebrateFinish(){
+  const cx = window.innerWidth/2, cy = window.innerHeight*0.35;
+  for(let i=0;i<18;i++){
+    setTimeout(() => burstConfetti(cx + (Math.random()*160-80), cy + (Math.random()*60-30), true), i*30);
+  }
+  playChime(true);
+}
+
+function initGame(){
+  rounds = shuffleArr(ITEMS).slice(0, TOTAL);
+  idx = 0;
+  correctCount = 0;
+  startRound();
+}
+
+function startRound(){
+  progressEl.textContent = `${idx+1} / ${TOTAL}`;
+  const item = rounds[idx];
+  sentenceCard.innerHTML = `${item.sentence[0]}<span class="blank">( )</span>${item.sentence[1]}`;
+
+  const opts = shuffleArr(item.options);
+  optionsEl.innerHTML = '';
+  opts.forEach((w, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'opt c' + (i % 4);
+    btn.textContent = w;
+    btn.addEventListener('click', () => onPick(w === item.answer, btn));
+    optionsEl.appendChild(btn);
+  });
+}
+
+function onPick(isCorrect, btn){
+  optionsEl.querySelectorAll('.opt').forEach(b => b.disabled = true);
+  feedbackEffect(isCorrect, btn);
+  if(isCorrect){
+    correctCount++;
+    btn.classList.add('correct');
+  } else {
+    btn.classList.add('wrong');
+  }
+  setTimeout(() => {
+    idx++;
+    if(idx >= TOTAL){
+      showResult();
+    } else {
+      startRound();
+    }
+  }, 500);
+}
+
+function showResult(){
+  scoreText.textContent = `${correctCount} / ${TOTAL}`;
+  overlay.classList.add('show');
+  if(correctCount >= TOTAL * 0.6) celebrateFinish();
+}
+
+document.getElementById('restartBtn').addEventListener('click', () => {
+  overlay.classList.remove('show');
+  initGame();
+});
+
+initGame();
+</script>
+</body>
+</html>

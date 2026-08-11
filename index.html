@@ -43,7 +43,15 @@
   .screen{ position:relative; z-index:1; min-height:100vh; padding:28px 18px 40px; }
   .hidden{ display:none !important; }
 
-  header{ text-align:center; margin-bottom:6px; }
+  header{ text-align:center; margin-bottom:6px; position:relative; }
+  .han-link{
+    position:absolute; top:0; right:0;
+    display:flex; align-items:center; gap:4px;
+    background:rgba(247,245,239,0.08); border:1px solid var(--line);
+    color:var(--sunset-2); text-decoration:none;
+    font-size:12px; font-weight:700; padding:8px 12px; border-radius:999px;
+  }
+  .han-link:active{ background:rgba(247,245,239,0.18); }
   .eyebrow{
     font-size:11px; letter-spacing:.25em; text-transform:uppercase;
     color:var(--sunset-2); opacity:.85; font-weight:700; margin-bottom:6px;
@@ -279,9 +287,10 @@
 <!-- HOME -->
 <div class="screen" id="screenHome">
   <header>
+    <a class="han-link" href="han/index.html">📚 한글게임 →</a>
     <div class="eyebrow">In-Flight Mini Games</div>
     <h1>구름 위 미니게임</h1>
-    <div class="sub">와이파이 없이도 딸과 함께 즐기는 3가지 게임</div>
+    <div class="sub">와이파이 없이도 딸과 함께 즐기는 미니게임 모음</div>
   </header>
   <div class="portholes">
     <div class="porthole" data-game="ttt">
@@ -393,7 +402,7 @@
     <canvas id="jumpCanvas" width="360" height="200"></canvas>
     <div class="jump-overlay" id="jumpOverlay">
       <h3>병아리 점프!</h3>
-      <p>화면을 탭하면 점프해요.<br>선인장을 피해서 최대한 멀리 가보세요.</p>
+      <p>화면(또는 아래 버튼)을 탭하면 점프해요. 공중에서 한 번 더 탭하면 2단 점프!<br>아주 큰 선인장은 2단 점프로만 넘을 수 있어요.</p>
       <button id="jumpStartBtn">시작하기</button>
     </div>
   </div>
@@ -703,7 +712,7 @@ function jumpInit(){
   jumpState = jumpDefaultState();
   jumpRunning = false;
   jumpOverlay.classList.remove("hidden");
-  jumpOverlay.innerHTML = '<h3>병아리 점프!</h3><p>화면을 탭하면 점프해요 (공중에서 한 번 더 탭하면 2단 점프!).<br>선인장을 피해서 최대한 멀리 가보세요.</p><button id="jumpStartBtn">시작하기</button>';
+  jumpOverlay.innerHTML = '<h3>병아리 점프!</h3><p>화면(또는 아래 버튼)을 탭하면 점프해요. 공중에서 한 번 더 탭하면 2단 점프!<br>아주 큰 선인장은 2단 점프로만 넘을 수 있어요.</p><button id="jumpStartBtn">시작하기</button>';
   document.getElementById("jumpStartBtn").onclick = jumpStart;
   document.getElementById("jumpComboWrap").style.display = "none";
   jumpDrawFrame(); // static preview frame
@@ -767,12 +776,22 @@ function jumpUpdate(){
     s.jumpsUsed = 0; // touched ground — both jumps refill
   }
 
-  // spawn obstacles — occasionally a taller cactus
+  // spawn obstacles — occasionally taller cacti, sometimes tall enough to need a double jump
   s.spawnTimer -= 1;
   if(s.spawnTimer <= 0){
-    const isTall = Math.random() < 0.22;
-    const h = isTall ? 44 + Math.random()*16 : 24 + Math.random()*14;
-    const w = isTall ? 20 + Math.random()*8 : 15 + Math.random()*8;
+    const rand = Math.random();
+    let h, w;
+    if(rand < 0.12){
+      // extra tall — tuned so only a double jump clears it, single jump is not enough
+      h = 95 + Math.random()*25;
+      w = 26 + Math.random()*8;
+    } else if(rand < 0.34){
+      h = 44 + Math.random()*16;
+      w = 20 + Math.random()*8;
+    } else {
+      h = 24 + Math.random()*14;
+      w = 15 + Math.random()*8;
+    }
     s.obstacles.push({ x: CW + 10, w, h, passed:false });
     s.spawnTimer = 55 + Math.random()*45 - Math.min(s.speed*3, 30);
   }
@@ -785,13 +804,13 @@ function jumpUpdate(){
       o.passed = true;
       s.combo += 1;
       s.score += 2;
-      if(s.combo >= 3 && s.combo % 100 !== 0) jumpShowComboPopup(s.combo, false);
+      if(s.combo >= 3 && s.combo % 50 !== 0) jumpShowComboPopup(s.combo, false);
     }
   });
   s.obstacles = s.obstacles.filter(o => o.x + o.w > -10);
 
-  // every 100 combo, give a one-time speed boost with an extra-flashy popup
-  if(s.combo > 0 && s.combo % 100 === 0 && s.lastComboBoost !== s.combo){
+  // every 50 combo, give a one-time speed boost with an extra-flashy popup
+  if(s.combo > 0 && s.combo % 50 === 0 && s.lastComboBoost !== s.combo){
     s.speed += 1.4;
     s.lastComboBoost = s.combo;
     jumpShowComboPopup(s.combo, true);
@@ -801,12 +820,17 @@ function jumpUpdate(){
   s.speed += 0.0025;
   s.score += 0.12;
 
-  // collision (chick treated as ~30x30 box at x=50)
+  // collision — exact box match with the shape drawn in jumpDrawCactus (o.x/o.w/o.h),
+  // with just a small forgiveness margin on the chick's own body so near-misses feel fair.
   const chickTop = s.y - chickSize;
+  const baseY = GROUND_Y + 4;
   for(const o of s.obstacles){
-    const obTop = GROUND_Y + 4 - o.h;
-    const overlapX = chickX + chickSize*0.6 > o.x && chickX + chickSize*0.25 < o.x + o.w;
-    const overlapY = chickTop + chickSize*0.7 > obTop;
+    const obTop = baseY - o.h;
+    const chickLeft = chickX + chickSize*0.18;
+    const chickRight = chickX + chickSize*0.82;
+    const chickBottomEff = chickTop + chickSize*0.85;
+    const overlapX = chickRight > o.x && chickLeft < o.x + o.w;
+    const overlapY = chickBottomEff > obTop;
     if(overlapX && overlapY){
       s.dead = true;
       s.combo = 0;
@@ -826,13 +850,10 @@ function jumpDrawFrame(){
   // ground
   jctx.fillStyle = "rgba(247,245,239,0.18)";
   jctx.fillRect(0, GROUND_Y+4, CW, 2);
-  // obstacles (cactus emoji, sized by height so tall ones look bigger)
-  jctx.textBaseline = "bottom";
-  s.obstacles.forEach(o=>{
-    jctx.font = Math.round(o.h * 0.9) + "px sans-serif";
-    jctx.fillText("🌵", o.x, GROUND_Y+6);
-  });
+  // obstacles — drawn as exact shapes (not emoji) so what you see is exactly the hitbox
+  s.obstacles.forEach(o=> jumpDrawCactus(o));
   // chick
+  jctx.textBaseline = "bottom";
   jctx.font = "30px sans-serif";
   jctx.fillText("🐥", 40, s.y+4);
   // score text on canvas
@@ -841,6 +862,40 @@ function jumpDrawFrame(){
   jctx.textAlign = "right";
   jctx.fillText(Math.floor(s.score), CW-10, 22);
   jctx.textAlign = "left";
+}
+
+function jumpRoundRectPath(ctx, x, y, w, h, r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function jumpDrawCactus(o){
+  // the drawn shape's bounding box is exactly [o.x, o.x+o.w] x [baseY-o.h, baseY] —
+  // the same box used for collision, so there's no mismatch between what's shown and what counts.
+  const baseY = GROUND_Y + 4;
+  const topY = baseY - o.h;
+  jctx.fillStyle = "#4f9d4a";
+  const trunkW = o.w * 0.5;
+  const trunkX = o.x + (o.w - trunkW) / 2;
+  jumpRoundRectPath(jctx, trunkX, topY, trunkW, o.h, trunkW * 0.35);
+  jctx.fill();
+  if(o.h > 30){
+    const armW = trunkW * 0.65;
+    const armH = o.h * 0.32;
+    const armY = topY + o.h * 0.28;
+    jumpRoundRectPath(jctx, o.x, armY, armW, armH, armW * 0.3);
+    jctx.fill();
+    jumpRoundRectPath(jctx, o.x + o.w - armW, armY - o.h * 0.06, armW, armH, armW * 0.3);
+    jctx.fill();
+  }
+  jctx.fillStyle = "#3a7a37";
+  jctx.fillRect(trunkX, baseY - 3, trunkW, 3);
 }
 
 function jumpLoop(){

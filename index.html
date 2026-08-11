@@ -43,13 +43,13 @@
   .screen{ position:relative; z-index:1; min-height:100vh; padding:28px 18px 40px; }
   .hidden{ display:none !important; }
 
-  header{ text-align:center; margin-bottom:6px; position:relative; }
+  header{ text-align:center; margin-bottom:6px; }
   .han-link{
-    position:absolute; top:0; right:0;
-    display:flex; align-items:center; gap:4px;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    max-width:380px; margin:26px auto 0;
     background:rgba(247,245,239,0.08); border:1px solid var(--line);
     color:var(--sunset-2); text-decoration:none;
-    font-size:12px; font-weight:700; padding:8px 12px; border-radius:999px;
+    font-size:13.5px; font-weight:700; padding:14px 16px; border-radius:16px;
   }
   .han-link:active{ background:rgba(247,245,239,0.18); }
   .eyebrow{
@@ -287,7 +287,6 @@
 <!-- HOME -->
 <div class="screen" id="screenHome">
   <header>
-    <a class="han-link" href="han/index.html">📚 한글게임 →</a>
     <div class="eyebrow">In-Flight Mini Games</div>
     <h1>구름 위 미니게임</h1>
     <div class="sub">와이파이 없이도 딸과 함께 즐기는 미니게임 모음</div>
@@ -329,6 +328,7 @@
       </div>
     </div>
   </div>
+  <a class="han-link" href="han/index.html">📚 한글게임으로 넘어가기 →</a>
 </div>
 
 <!-- TIC TAC TOE -->

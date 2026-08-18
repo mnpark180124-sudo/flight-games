@@ -1,1 +1,588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>숫자나라 모험</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-1:#a7e8ff;
+    --bg-2:#7dd3fc;
+    --panel:#ffffff;
+    --ink:#1e293b;
+    --muted:#64748b;
 
+    --stage1:#22c55e;   /* 더하기 - 숲 */
+    --stage1-soft:#dcfce7;
+    --stage2:#0ea5e9;   /* 빼기 - 강 */
+    --stage2-soft:#e0f2fe;
+    --stage3:#a855f7;   /* 곱하기 - 성 */
+    --stage3-soft:#f3e8ff;
+
+    --heart:#f43f5e;
+    --wrong:#ef4444;
+    --gold:#f59e0b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    background:linear-gradient(180deg, var(--bg-1), var(--bg-2));
+    font-family:'Gaegu', sans-serif;
+    color:var(--ink);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    overflow-x:hidden;
+  }
+  .stage-font{font-family:'Jua', sans-serif;}
+
+  #app{
+    width:100%;
+    max-width:480px;
+  }
+
+  /* ===== 진행 경로 (1-2-3단계) ===== */
+  .path{
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .path-step{
+    width:38px;height:38px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.55);
+    border:3px solid rgba(255,255,255,0.8);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Jua', sans-serif;
+    font-size:16px;
+    color:#fff;
+    transition:all .3s ease;
+  }
+  .path-step.active{
+    background:var(--gold);
+    border-color:#fff;
+    transform:scale(1.15);
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+  }
+  .path-step.done{
+    background:#fff;
+    color:var(--gold);
+  }
+  .path-line{
+    width:24px;height:4px;
+    background:rgba(255,255,255,0.6);
+    border-radius:2px;
+  }
+
+  /* ===== 카드 ===== */
+  .card{
+    background:var(--panel);
+    border-radius:28px;
+    padding:24px 20px 28px;
+    box-shadow:0 12px 32px rgba(15,60,90,0.18);
+    position:relative;
+    overflow:hidden;
+  }
+  .stage-badge{
+    display:inline-block;
+    font-family:'Jua', sans-serif;
+    font-size:13px;
+    color:#fff;
+    padding:5px 14px;
+    border-radius:14px;
+    margin-bottom:10px;
+  }
+
+  /* ===== 시작 화면 ===== */
+  #screen-start{text-align:center;}
+  #screen-start h1{
+    font-family:'Jua', sans-serif;
+    font-size:26px;
+    margin:6px 0 4px;
+  }
+  #screen-start p{color:var(--muted); font-size:16px; margin:0 0 20px;}
+  .mascot{
+    width:100px;height:100px;
+    margin:0 auto 8px;
+    border-radius:50%;
+    background:#fde68a;
+    display:flex;align-items:center;justify-content:center;
+    font-size:52px;
+    animation:bob 2.4s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{transform:translateY(0);}
+    50%{transform:translateY(-8px);}
+  }
+  .big-btn{
+    font-family:'Jua', sans-serif;
+    font-size:19px;
+    color:#fff;
+    background:var(--stage1);
+    border:none;
+    padding:14px 32px;
+    border-radius:18px;
+    cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,0.15);
+    transition:transform .08s ease;
+  }
+  .big-btn:active{transform:translateY(4px); box-shadow:0 2px 0 rgba(0,0,0,0.15);}
+
+  /* ===== 게임 화면 ===== */
+  #screen-game{display:none;}
+  .game-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+  }
+  .progress-dots{display:flex; gap:5px;}
+  .dot{width:9px;height:9px;border-radius:50%;background:#e2e8f0;}
+  .dot.filled{background:var(--gold);}
+  .lives{font-size:18px;}
+
+  .timer-track{
+    height:8px;
+    border-radius:4px;
+    background:#e2e8f0;
+    overflow:hidden;
+    margin-bottom:18px;
+  }
+  .timer-fill{
+    height:100%;
+    background:var(--gold);
+    width:100%;
+    transition:width 0.1s linear, background .3s ease;
+  }
+
+  .speech-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:6px;
+  }
+  .mascot-small{
+    width:56px;height:56px;
+    border-radius:50%;
+    background:#fde68a;
+    display:flex;align-items:center;justify-content:center;
+    font-size:30px;
+    flex:0 0 auto;
+  }
+  .bubble{
+    background:var(--stage1-soft);
+    border-radius:16px;
+    padding:10px 16px;
+    flex:1;
+    font-size:15px;
+    color:var(--ink);
+  }
+
+  .problem-wrap{
+    text-align:center;
+    margin:18px 0 22px;
+  }
+  .problem{
+    display:inline-block;
+    font-family:'Jua', sans-serif;
+    font-size:44px;
+    background:var(--stage1-soft);
+    padding:16px 30px;
+    border-radius:20px;
+    transition:transform .25s ease;
+  }
+  .problem.pop{animation:pop .3s ease;}
+  @keyframes pop{
+    0%{transform:scale(0.6); opacity:0;}
+    60%{transform:scale(1.08);}
+    100%{transform:scale(1); opacity:1;}
+  }
+
+  .choices{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:12px;
+  }
+  .choice{
+    font-family:'Jua', sans-serif;
+    font-size:24px;
+    padding:16px 0;
+    border-radius:16px;
+    border:3px solid #e2e8f0;
+    background:#fff;
+    color:var(--ink);
+    cursor:pointer;
+    transition:transform .08s ease, background .15s ease;
+  }
+  .choice:active{transform:scale(0.96);}
+  .choice.correct{background:#dcfce7; border-color:var(--stage1); animation:pop .3s ease;}
+  .choice.wrong{background:#fee2e2; border-color:var(--wrong); animation:shake .35s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-6px);}
+    75%{transform:translateX(6px);}
+  }
+
+  .popup{
+    position:absolute;
+    left:50%; top:40%;
+    transform:translate(-50%,-50%) scale(0.5);
+    font-size:64px;
+    opacity:0;
+    pointer-events:none;
+    z-index:5;
+  }
+  .popup.show-heart{animation:floatHeart 0.9s ease forwards;}
+  .popup.show-x{animation:floatX 0.7s ease forwards;}
+  @keyframes floatHeart{
+    0%{opacity:0; transform:translate(-50%,-40%) scale(0.4);}
+    30%{opacity:1; transform:translate(-50%,-60%) scale(1.2);}
+    100%{opacity:0; transform:translate(-50%,-110%) scale(1);}
+  }
+  @keyframes floatX{
+    0%{opacity:0; transform:translate(-50%,-50%) scale(0.4) rotate(-10deg);}
+    30%{opacity:1; transform:translate(-50%,-50%) scale(1.3) rotate(8deg);}
+    100%{opacity:0; transform:translate(-50%,-50%) scale(1) rotate(0deg);}
+  }
+
+  /* ===== 결과 화면 (통과/재도전) ===== */
+  #screen-result{display:none; text-align:center;}
+  #screen-result .emoji{font-size:64px; margin-bottom:6px;}
+  #screen-result h2{font-family:'Jua', sans-serif; font-size:24px; margin:0 0 6px;}
+  #screen-result p{color:var(--muted); font-size:15px; margin:0 0 20px;}
+
+  #screen-clear{display:none; text-align:center;}
+  #screen-clear .emoji{font-size:72px;}
+  #screen-clear h2{font-family:'Jua', sans-serif; font-size:26px; margin:8px 0 6px;}
+
+  .hidden{display:none !important;}
+
+  body{ align-items:flex-start; padding-top:28px; padding-bottom:40px; }
+  .back-link{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:100%; max-width:480px; margin:18px auto 0;
+    background:rgba(255,255,255,0.6); border:2px solid rgba(30,41,59,0.12);
+    color:var(--ink); text-decoration:none;
+    font-family:'Gaegu', sans-serif; font-weight:700;
+    font-size:14px; padding:12px 16px; border-radius:16px;
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="path" id="path"></div>
+
+  <div class="card" id="card">
+
+    <!-- 시작 화면 -->
+    <div id="screen-start">
+      <div class="mascot">🐻</div>
+      <h1>숫자나라 모험</h1>
+      <p>더하기 숲 → 빼기 강 → 곱하기 성<br/>순서대로 통과해보자!</p>
+      <button class="big-btn" onclick="startGame()">모험 시작!</button>
+    </div>
+
+    <!-- 게임 화면 -->
+    <div id="screen-game">
+      <div class="stage-badge" id="stage-badge"></div>
+      <div class="game-top">
+        <div class="progress-dots" id="progress-dots"></div>
+        <div class="lives" id="lives"></div>
+      </div>
+      <div class="timer-track"><div class="timer-fill" id="timer-fill"></div></div>
+
+      <div class="speech-row">
+        <div class="mascot-small">🐻</div>
+        <div class="bubble" id="bubble">이 문제를 풀어봐!</div>
+      </div>
+
+      <div class="problem-wrap">
+        <div class="problem" id="problem">-</div>
+        <div class="popup" id="popup"></div>
+      </div>
+
+      <div class="choices" id="choices"></div>
+    </div>
+
+    <!-- 단계 결과 화면 -->
+    <div id="screen-result">
+      <div class="emoji" id="result-emoji">🎉</div>
+      <h2 id="result-title">축하합니다!</h2>
+      <p id="result-desc">다음 단계로 이동</p>
+      <button class="big-btn" id="result-btn" onclick="handleResultNext()">계속하기</button>
+    </div>
+
+    <!-- 전체 클리어 화면 -->
+    <div id="screen-clear">
+      <div class="emoji">🏆</div>
+      <h2>모험 완주!</h2>
+      <p style="color:var(--muted); font-size:15px;">더하기 · 빼기 · 곱하기 성을 모두 정복했어요!</p>
+      <button class="big-btn" onclick="restartAll()" style="margin-top:14px;">처음부터 다시</button>
+    </div>
+
+  </div>
+</div>
+
+<a class="back-link" href="../index.html">← 미니게임으로 돌아가기</a>
+
+<script>
+/* ===================== 설정 ===================== */
+const STAGES = [
+  { key:'add', label:'1단계 · 더하기 숲', color:'stage1', soft:'stage1-soft', emoji:'🌳' },
+  { key:'sub', label:'2단계 · 빼기 강',   color:'stage2', soft:'stage2-soft', emoji:'🌊' },
+  { key:'mul', label:'3단계 · 곱하기 성', color:'stage3', soft:'stage3-soft', emoji:'🏰' },
+];
+const QUESTIONS_PER_STAGE = 10;
+const PASS_THRESHOLD = 7;
+const TIME_LIMIT = 10; // 초
+
+let stageIdx = 0;
+let qIndex = 0;
+let correctCount = 0;
+let timer = null;
+let timeLeft = TIME_LIMIT;
+let answering = false;
+
+/* ===================== 문제 생성 ===================== */
+function randInt(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function generateProblem(stageKey){
+  if (stageKey === 'add'){
+    const a = randInt(10, 99);
+    const b = randInt(1, 9);
+    return { text:`${a} + ${b}`, answer: a + b };
+  }
+  if (stageKey === 'sub'){
+    const a = randInt(10, 99);
+    const b = randInt(1, 9);
+    return { text:`${a} - ${b}`, answer: a - b };
+  }
+  // mul
+  const a = randInt(1, 9);
+  const b = randInt(1, 9);
+  return { text:`${a} × ${b}`, answer: a * b };
+}
+
+function generateChoices(correctAnswer){
+  const set = new Set([correctAnswer]);
+  while (set.size < 4){
+    const offset = randInt(-6, 6);
+    const candidate = correctAnswer + offset;
+    if (candidate >= 0 && candidate !== correctAnswer) set.add(candidate);
+  }
+  return shuffle([...set]);
+}
+
+function shuffle(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ===================== 화면 전환 ===================== */
+function show(id){
+  ['screen-start','screen-game','screen-result','screen-clear'].forEach(s=>{
+    document.getElementById(s).style.display = (s === id) ? 'block' : 'none';
+  });
+}
+
+function renderPath(){
+  const path = document.getElementById('path');
+  path.innerHTML = '';
+  STAGES.forEach((s, i) => {
+    const step = document.createElement('div');
+    step.className = 'path-step' + (i === stageIdx ? ' active' : (i < stageIdx ? ' done' : ''));
+    step.textContent = i < stageIdx ? '✓' : (i + 1);
+    path.appendChild(step);
+    if (i < STAGES.length - 1){
+      const line = document.createElement('div');
+      line.className = 'path-line';
+      path.appendChild(line);
+    }
+  });
+}
+
+function applyStageColor(){
+  const stage = STAGES[stageIdx];
+  document.getElementById('stage-badge').style.background = `var(--${stage.color})`;
+  document.getElementById('stage-badge').textContent = `${stage.emoji} ${stage.label}`;
+  document.getElementById('bubble').style.background = `var(--${stage.soft})`;
+  document.getElementById('problem').style.background = `var(--${stage.soft})`;
+  document.getElementById('timer-fill').style.background = `var(--${stage.color})`;
+}
+
+/* ===================== 게임 진행 ===================== */
+function startGame(){
+  stageIdx = 0;
+  startStage();
+}
+
+function startStage(){
+  qIndex = 0;
+  correctCount = 0;
+  renderPath();
+  applyStageColor();
+  renderDots();
+  show('screen-game');
+  nextQuestion();
+}
+
+function renderDots(){
+  const dots = document.getElementById('progress-dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < QUESTIONS_PER_STAGE; i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < qIndex ? ' filled' : '');
+    dots.appendChild(d);
+  }
+  document.getElementById('lives').textContent = '💚'.repeat(Math.max(0, correctCount)) || '　';
+}
+
+let currentProblem = null;
+
+function nextQuestion(){
+  if (qIndex >= QUESTIONS_PER_STAGE){
+    finishStage();
+    return;
+  }
+  answering = true;
+  currentProblem = generateProblem(STAGES[stageIdx].key);
+
+  const problemEl = document.getElementById('problem');
+  problemEl.textContent = currentProblem.text;
+  problemEl.classList.remove('pop');
+  void problemEl.offsetWidth;
+  problemEl.classList.add('pop');
+
+  const choices = generateChoices(currentProblem.answer);
+  const choicesEl = document.getElementById('choices');
+  choicesEl.innerHTML = '';
+  choices.forEach(val => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = val;
+    btn.onclick = () => selectAnswer(val, btn);
+    choicesEl.appendChild(btn);
+  });
+
+  document.getElementById('bubble').textContent = randomEncourage();
+  renderDots();
+  startTimer();
+}
+
+function randomEncourage(){
+  const list = ['이 문제를 풀어봐!', '천천히 생각해봐!', '넌 할 수 있어!', '집중! 집중!', '거의 다 왔어!'];
+  return list[randInt(0, list.length - 1)];
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timeLeft = TIME_LIMIT;
+  const fill = document.getElementById('timer-fill');
+  fill.style.width = '100%';
+  fill.style.background = `var(--${STAGES[stageIdx].color})`;
+
+  timer = setInterval(() => {
+    timeLeft -= 0.1;
+    const pct = Math.max(0, (timeLeft / TIME_LIMIT) * 100);
+    fill.style.width = pct + '%';
+    if (pct < 30) fill.style.background = 'var(--wrong)';
+    if (timeLeft <= 0){
+      clearInterval(timer);
+      if (answering) timeoutAnswer();
+    }
+  }, 100);
+}
+
+function timeoutAnswer(){
+  answering = false;
+  showPopup(false);
+  setTimeout(() => { qIndex++; nextQuestion(); }, 800);
+}
+
+function selectAnswer(val, btnEl){
+  if (!answering) return;
+  answering = false;
+  clearInterval(timer);
+
+  const isCorrect = val === currentProblem.answer;
+  document.querySelectorAll('.choice').forEach(b => {
+    if (Number(b.textContent) === currentProblem.answer) b.classList.add('correct');
+    else if (b === btnEl) b.classList.add('wrong');
+  });
+
+  if (isCorrect) correctCount++;
+  showPopup(isCorrect);
+
+  setTimeout(() => { qIndex++; nextQuestion(); }, 800);
+}
+
+function showPopup(isCorrect){
+  const popup = document.getElementById('popup');
+  popup.className = 'popup';
+  void popup.offsetWidth;
+  if (isCorrect){
+    popup.textContent = '💗';
+    popup.classList.add('show-heart');
+  } else {
+    popup.textContent = '❌';
+    popup.classList.add('show-x');
+  }
+}
+
+function finishStage(){
+  clearInterval(timer);
+  const passed = correctCount >= PASS_THRESHOLD;
+  const resultEmoji = document.getElementById('result-emoji');
+  const resultTitle = document.getElementById('result-title');
+  const resultDesc = document.getElementById('result-desc');
+  const resultBtn = document.getElementById('result-btn');
+
+  if (passed){
+    resultEmoji.textContent = '🎉';
+    resultTitle.textContent = '축하합니다!';
+    resultDesc.textContent = `${QUESTIONS_PER_STAGE}문제 중 ${correctCount}문제 정답! 다음 단계로 이동`;
+    resultBtn.textContent = stageIdx < STAGES.length - 1 ? '다음 단계로' : '결과 보기';
+  } else {
+    resultEmoji.textContent = '💪';
+    resultTitle.textContent = '다시 도전해요!';
+    resultDesc.textContent = `${QUESTIONS_PER_STAGE}문제 중 ${correctCount}문제 정답. 7문제 이상 맞히면 통과해요.`;
+    resultBtn.textContent = '다시 도전하기';
+  }
+
+  window.__stagePassed = passed;
+  show('screen-result');
+}
+
+function handleResultNext(){
+  if (window.__stagePassed){
+    if (stageIdx < STAGES.length - 1){
+      stageIdx++;
+      startStage();
+    } else {
+      renderPath();
+      show('screen-clear');
+    }
+  } else {
+    startStage();
+  }
+}
+
+function restartAll(){
+  stageIdx = 0;
+  show('screen-start');
+  document.getElementById('path').innerHTML = '';
+}
+</script>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
-<title>동물 색칠놀이</title>
+<title>색칠놀이</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
@@ -30,34 +30,48 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    padding:24px 16px 40px;
+    padding:14px 14px 24px;
     -webkit-user-select:none; user-select:none;
     touch-action:none;
     overscroll-behavior:none;
   }
-  header{ text-align:center; margin-bottom:16px; }
+
+  /* 뒤로가기 - 떠있는 작은 버튼 (문서 흐름에서 빠져있어 화면을 줄이지 않음) */
+  .back-fab{
+    position:fixed; top:12px; left:12px; z-index:30;
+    width:42px; height:42px; border-radius:50%;
+    background:#fff; box-shadow:var(--shadow);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; text-decoration:none; color:var(--ink);
+  }
+
+  header{ text-align:center; margin:2px 0 10px; }
   h1{
     font-family:'Jua', sans-serif;
-    font-size:clamp(24px, 7vw, 32px);
-    margin:0 0 4px;
+    font-size:clamp(20px, 6vw, 26px);
+    margin:0;
   }
-  header p{ margin:0; font-size:13px; opacity:.7; }
 
-  .animal-tabs{
-    display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; justify-content:center;
-    max-width:360px;
+  /* 카테고리 큰 버튼 4개 */
+  .category-row{
+    display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;
+    width:min(420px, 96vw); margin-bottom:10px;
   }
-  .tab{
-    width:48px; height:48px; border-radius:14px; border:3px solid transparent;
-    background:#fff; box-shadow:var(--shadow); font-size:24px;
-    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  .cat-btn{
+    background:#fff; border:3px solid transparent; border-radius:16px;
+    box-shadow:var(--shadow); padding:8px 4px 6px;
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    cursor:pointer;
   }
-  .tab.active{ border-color:var(--coral); transform:translateY(2px); box-shadow:0 4px 0 rgba(43,33,64,0.12); }
+  .cat-btn.active{ border-color:var(--coral); }
+  .cat-btn .cat-icon{ font-size:24px; }
+  .cat-btn .cat-name{ font-family:'Jua', sans-serif; font-size:10.5px; }
+  .cat-btn .cur-item{ font-size:9.5px; opacity:.6; }
 
   .canvas-wrap{
     position:relative;
-    width:min(340px, 88vw);
-    height:min(340px, 88vw);
+    width:min(440px, 96vw);
+    height:min(440px, 96vw);
     background:#fff;
     border-radius:26px;
     box-shadow:var(--shadow);
@@ -72,32 +86,30 @@
   }
 
   .toolbar{
-    width:min(340px, 88vw);
-    margin-top:16px;
-    display:flex; flex-direction:column; gap:12px;
+    width:min(440px, 96vw);
+    margin-top:12px;
+    display:flex; flex-direction:column; gap:10px;
   }
   .palette{
     display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
-    background:#fff; border-radius:18px; padding:12px; box-shadow:var(--shadow);
+    background:#fff; border-radius:18px; padding:10px; box-shadow:var(--shadow);
   }
   .swatch{
-    width:30px; height:30px; border-radius:50%; border:3px solid #fff;
+    width:28px; height:28px; border-radius:50%; border:3px solid #fff;
     box-shadow:0 0 0 2px rgba(43,33,64,0.15); cursor:pointer; flex-shrink:0;
   }
   .swatch.active{ box-shadow:0 0 0 3px var(--ink); transform:scale(1.1); }
 
-  .row{
-    display:flex; gap:8px; justify-content:center;
-  }
+  .row{ display:flex; gap:8px; justify-content:center; }
   .btn{
     flex:1;
     font-family:'Jua', sans-serif;
-    font-size:13px;
+    font-size:12.5px;
     color:var(--ink);
     background:#fff;
     border:none;
     border-radius:14px;
-    padding:12px 8px;
+    padding:11px 8px;
     box-shadow:var(--shadow);
     cursor:pointer;
     display:flex; align-items:center; justify-content:center; gap:6px;
@@ -106,23 +118,46 @@
   .btn.active{ background:var(--lemon); }
   .btn.danger{ color:#fff; background:var(--coral); }
 
-  .back-link{
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    width:min(340px, 88vw); margin:24px auto 0;
-    background:rgba(255,255,255,0.7); border:2px solid rgba(43,33,64,0.12);
-    color:#2B2140; text-decoration:none;
-    font-family:'Gowun Dodum', sans-serif;
-    font-size:13.5px; font-weight:700; padding:14px 16px; border-radius:16px;
+  /* 그림 고르기 모달 */
+  .modal-backdrop{
+    position:fixed; inset:0; background:rgba(43,33,64,0.45);
+    display:none; align-items:flex-end; justify-content:center; z-index:20;
+  }
+  .modal-backdrop.show{ display:flex; }
+  .modal-sheet{
+    width:100%; max-width:420px; background:var(--card-bg);
+    border-radius:28px 28px 0 0; padding:20px 18px 28px;
+    box-shadow:0 -8px 24px rgba(0,0,0,0.2);
+  }
+  .modal-title{
+    font-family:'Jua', sans-serif; font-size:18px; text-align:center; margin:0 0 16px;
+  }
+  .item-grid{
+    display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;
+  }
+  .item-btn{
+    background:var(--sky-bottom); border:3px solid transparent; border-radius:20px;
+    padding:14px 6px 10px; display:flex; flex-direction:column; align-items:center; gap:6px;
+    cursor:pointer;
+  }
+  .item-btn.active{ border-color:var(--coral); background:#fff; }
+  .item-btn .item-icon{ font-size:40px; }
+  .item-btn .item-name{ font-family:'Jua', sans-serif; font-size:12px; }
+  .modal-close{
+    display:block; margin:18px auto 0;
+    font-family:'Jua', sans-serif; font-size:14px; color:var(--ink);
+    background:#F0EEF6; border:none; border-radius:14px; padding:10px 24px; cursor:pointer;
   }
 </style>
 </head>
 <body>
+  <a class="back-fab" href="../index.html">←</a>
+
   <header>
-    <h1>🎨 동물 색칠놀이</h1>
-    <p>손가락으로 자유롭게 칠해봐요</p>
+    <h1>🎨 색칠놀이</h1>
   </header>
 
-  <div class="animal-tabs" id="animalTabs"></div>
+  <div class="category-row" id="categoryRow"></div>
 
   <div class="canvas-wrap">
     <canvas id="paintCanvas"></canvas>
@@ -142,95 +177,271 @@
     </div>
   </div>
 
-  <a class="back-link" href="../index.html">← 미니게임으로 돌아가기</a>
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal-sheet">
+      <h2 class="modal-title" id="modalTitle">그림을 골라보세요</h2>
+      <div class="item-grid" id="itemGrid"></div>
+      <button class="modal-close" id="modalClose">닫기</button>
+    </div>
+  </div>
 
 <script>
-/* ===================== 동물 윤곽선 (SVG) ===================== */
-const STROKE = 'stroke="#2B2140" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+/* ===================== 윤곽선 (SVG) — 캔버스의 약 90%를 채우도록 크게 그림 ===================== */
+const STROKE = 'stroke="#2B2140" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+const STROKE_T = 'stroke="#2B2140" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round"'; /* 두꺼운 목/꼬리용 */
 
-const ANIMALS = {
-  bear: {
-    icon:'🐻', name:'곰돌이',
-    svg:`
-      <ellipse cx="150" cy="170" rx="88" ry="80" ${STROKE}/>
-      <circle cx="82" cy="90" r="30" ${STROKE}/>
-      <circle cx="218" cy="90" r="30" ${STROKE}/>
-      <circle cx="82" cy="90" r="10" ${STROKE}/>
-      <circle cx="218" cy="90" r="10" ${STROKE}/>
-      <ellipse cx="150" cy="190" rx="42" ry="32" ${STROKE}/>
-      <circle cx="150" cy="172" r="9" fill="#2B2140"/>
-      <circle cx="122" cy="158" r="7" fill="#2B2140"/>
-      <circle cx="178" cy="158" r="7" fill="#2B2140"/>
-      <path d="M150 181 Q150 200 132 205" ${STROKE}/>
-      <path d="M150 181 Q150 200 168 205" ${STROKE}/>
-    `
+const CATEGORIES = {
+  animals: {
+    icon:'🐻', name:'동물',
+    items: {
+      bear: { icon:'🐻', name:'곰돌이', svg:`
+        <circle cx="65" cy="55" r="42" ${STROKE}/>
+        <circle cx="235" cy="55" r="42" ${STROKE}/>
+        <circle cx="65" cy="55" r="16" ${STROKE}/>
+        <circle cx="235" cy="55" r="16" ${STROKE}/>
+        <circle cx="150" cy="160" r="125" ${STROKE}/>
+        <ellipse cx="150" cy="195" rx="62" ry="46" ${STROKE}/>
+        <circle cx="150" cy="172" r="14" fill="#2B2140"/>
+        <circle cx="110" cy="145" r="11" fill="#2B2140"/>
+        <circle cx="190" cy="145" r="11" fill="#2B2140"/>
+        <path d="M150 186 Q150 216 115 223" ${STROKE}/>
+        <path d="M150 186 Q150 216 185 223" ${STROKE}/>
+      `},
+      cat: { icon:'🐱', name:'고양이', svg:`
+        <path d="M60 90 L35 15 L110 65 Z" ${STROKE}/>
+        <path d="M240 90 L265 15 L190 65 Z" ${STROKE}/>
+        <circle cx="150" cy="170" r="118" ${STROKE}/>
+        <circle cx="110" cy="155" r="11" fill="#2B2140"/>
+        <circle cx="190" cy="155" r="11" fill="#2B2140"/>
+        <path d="M150 178 L136 196 L164 196 Z" ${STROKE}/>
+        <path d="M136 205 Q150 216 164 205" ${STROKE}/>
+        <path d="M20 165 L100 172" ${STROKE}/>
+        <path d="M20 195 L100 188" ${STROKE}/>
+        <path d="M280 165 L200 172" ${STROKE}/>
+        <path d="M280 195 L200 188" ${STROKE}/>
+      `},
+      dog: { icon:'🐶', name:'강아지', svg:`
+        <path d="M78 110 Q20 150 45 240 Q85 225 100 160 Z" ${STROKE}/>
+        <path d="M222 110 Q280 150 255 240 Q215 225 200 160 Z" ${STROKE}/>
+        <ellipse cx="150" cy="170" rx="120" ry="118" ${STROKE}/>
+        <circle cx="115" cy="160" r="11" fill="#2B2140"/>
+        <circle cx="185" cy="160" r="11" fill="#2B2140"/>
+        <ellipse cx="150" cy="215" rx="48" ry="36" ${STROKE}/>
+        <ellipse cx="150" cy="200" rx="16" ry="12" fill="#2B2140"/>
+        <path d="M150 212 Q150 232 118 238" ${STROKE}/>
+        <path d="M150 212 Q150 232 182 238" ${STROKE}/>
+      `},
+      rabbit: { icon:'🐰', name:'토끼', svg:`
+        <ellipse cx="110" cy="90" rx="30" ry="80" ${STROKE}/>
+        <ellipse cx="190" cy="90" rx="30" ry="80" ${STROKE}/>
+        <circle cx="150" cy="195" r="95" ${STROKE}/>
+        <circle cx="122" cy="185" r="11" fill="#2B2140"/>
+        <circle cx="178" cy="185" r="11" fill="#2B2140"/>
+        <path d="M150 205 L138 222 L162 222 Z" ${STROKE}/>
+        <path d="M40 200 L120 208" ${STROKE}/>
+        <path d="M40 228 L120 218" ${STROKE}/>
+        <path d="M260 200 L180 208" ${STROKE}/>
+        <path d="M260 228 L180 218" ${STROKE}/>
+      `},
+      panda: { icon:'🐼', name:'판다', svg:`
+        <circle cx="58" cy="55" r="38" ${STROKE}/>
+        <circle cx="242" cy="55" r="38" ${STROKE}/>
+        <circle cx="150" cy="165" r="120" ${STROKE}/>
+        <ellipse cx="112" cy="150" rx="32" ry="40" ${STROKE}/>
+        <ellipse cx="188" cy="150" rx="32" ry="40" ${STROKE}/>
+        <circle cx="116" cy="155" r="10" fill="#2B2140"/>
+        <circle cx="184" cy="155" r="10" fill="#2B2140"/>
+        <ellipse cx="150" cy="195" rx="16" ry="12" fill="#2B2140"/>
+        <path d="M150 207 Q150 225 128 231" ${STROKE}/>
+        <path d="M150 207 Q150 225 172 231" ${STROKE}/>
+      `}
+    }
   },
-  cat: {
-    icon:'🐱', name:'고양이',
-    svg:`
-      <circle cx="150" cy="165" r="92" ${STROKE}/>
-      <path d="M78 100 L60 40 L120 78 Z" ${STROKE}/>
-      <path d="M222 100 L240 40 L180 78 Z" ${STROKE}/>
-      <circle cx="112" cy="150" r="8" fill="#2B2140"/>
-      <circle cx="188" cy="150" r="8" fill="#2B2140"/>
-      <path d="M150 172 L140 186 L160 186 Z" ${STROKE}/>
-      <path d="M150 186 Q150 198 150 198" ${STROKE}/>
-      <path d="M40 165 L100 172" ${STROKE}/>
-      <path d="M40 190 L100 185" ${STROKE}/>
-      <path d="M260 165 L200 172" ${STROKE}/>
-      <path d="M260 190 L200 185" ${STROKE}/>
-    `
+  dinosaurs: {
+    icon:'🦕', name:'공룡',
+    items: {
+      trex: { icon:'🦖', name:'티라노', svg:`
+        <ellipse cx="135" cy="195" rx="95" ry="75" ${STROKE}/>
+        <circle cx="235" cy="110" r="62" ${STROKE}/>
+        <path d="M280 140 L302 165 L280 178 Z" ${STROKE}/>
+        <circle cx="250" cy="92" r="9" fill="#2B2140"/>
+        <path d="M170 175 L138 200" ${STROKE}/>
+        <path d="M180 195 L150 216" ${STROKE}/>
+        <path d="M55 220 Q10 235 5 195 Q5 175 30 175" ${STROKE}/>
+        <ellipse cx="98" cy="262" rx="27" ry="37" ${STROKE}/>
+        <ellipse cx="175" cy="262" rx="27" ry="37" ${STROKE}/>
+      `},
+      triceratops: { icon:'🦕', name:'트리케라톱스', svg:`
+        <ellipse cx="178" cy="195" rx="100" ry="70" ${STROKE}/>
+        <circle cx="85" cy="150" r="70" ${STROKE}/>
+        <path d="M65 95 L45 28 L98 110 Z" ${STROKE}/>
+        <path d="M107 90 L112 18 L136 100 Z" ${STROKE}/>
+        <path d="M58 155 L10 155 L56 178 Z" ${STROKE}/>
+        <circle cx="102" cy="140" r="10" fill="#2B2140"/>
+        <ellipse cx="135" cy="260" rx="26" ry="38" ${STROKE}/>
+        <ellipse cx="212" cy="260" rx="26" ry="38" ${STROKE}/>
+        <path d="M272 205 Q305 215 296 252" ${STROKE}/>
+      `},
+      stegosaurus: { icon:'🦕', name:'스테고사우루스', svg:`
+        <path d="M25 225 Q40 95 150 88 Q245 82 282 172 Q290 200 268 227 Q150 262 58 232 Z" ${STROKE}/>
+        <circle cx="45" cy="155" r="30" ${STROKE}/>
+        <circle cx="32" cy="148" r="6" fill="#2B2140"/>
+        <path d="M85 100 L100 42 L120 105 Z" ${STROKE}/>
+        <path d="M124 90 L142 32 L162 96 Z" ${STROKE}/>
+        <path d="M165 86 L183 28 L202 92 Z" ${STROKE}/>
+        <path d="M204 90 L221 34 L240 97 Z" ${STROKE}/>
+        <path d="M242 102 L257 55 L273 110 Z" ${STROKE}/>
+        <path d="M276 180 L303 163 L282 200 Z" ${STROKE}/>
+        <path d="M280 207 L305 200 L284 227 Z" ${STROKE}/>
+        <ellipse cx="98" cy="257" rx="24" ry="35" ${STROKE}/>
+        <ellipse cx="150" cy="264" rx="24" ry="35" ${STROKE}/>
+        <ellipse cx="212" cy="257" rx="24" ry="35" ${STROKE}/>
+      `},
+      brachiosaurus: { icon:'🦕', name:'브라키오사우루스', svg:`
+        <ellipse cx="172" cy="222" rx="98" ry="58" ${STROKE}/>
+        <path d="M132 198 Q90 100 68 35" ${STROKE_T}/>
+        <circle cx="65" cy="30" r="30" ${STROKE}/>
+        <circle cx="55" cy="22" r="6" fill="#2B2140"/>
+        <path d="M258 238 Q302 248 298 278" ${STROKE_T}/>
+        <ellipse cx="122" cy="277" rx="24" ry="30" ${STROKE}/>
+        <ellipse cx="162" cy="280" rx="24" ry="30" ${STROKE}/>
+        <ellipse cx="205" cy="277" rx="24" ry="30" ${STROKE}/>
+        <ellipse cx="240" cy="268" rx="22" ry="28" ${STROKE}/>
+      `},
+      pteranodon: { icon:'🦖', name:'프테라노돈', svg:`
+        <path d="M120 168 Q30 88 5 148 Q60 180 138 182 Z" ${STROKE}/>
+        <path d="M180 168 Q270 88 295 148 Q240 180 162 182 Z" ${STROKE}/>
+        <ellipse cx="150" cy="175" rx="38" ry="30" ${STROKE}/>
+        <circle cx="150" cy="108" r="34" ${STROKE}/>
+        <path d="M175 95 L242 72 L180 128 Z" ${STROKE}/>
+        <path d="M150 78 L138 18 L164 76 Z" ${STROKE}/>
+        <circle cx="163" cy="100" r="7" fill="#2B2140"/>
+        <path d="M132 202 L112 248" ${STROKE}/>
+        <path d="M168 202 L188 248" ${STROKE}/>
+      `}
+    }
   },
-  dog: {
-    icon:'🐶', name:'강아지',
-    svg:`
-      <ellipse cx="150" cy="175" rx="86" ry="78" ${STROKE}/>
-      <path d="M84 100 Q40 130 58 200 Q90 190 100 140 Z" ${STROKE}/>
-      <path d="M216 100 Q260 130 242 200 Q210 190 200 140 Z" ${STROKE}/>
-      <circle cx="120" cy="160" r="8" fill="#2B2140"/>
-      <circle cx="180" cy="160" r="8" fill="#2B2140"/>
-      <ellipse cx="150" cy="205" rx="34" ry="26" ${STROKE}/>
-      <ellipse cx="150" cy="192" rx="12" ry="9" fill="#2B2140"/>
-      <path d="M150 201 Q150 215 130 218" ${STROKE}/>
-      <path d="M150 201 Q150 215 170 218" ${STROKE}/>
-    `
+  vehicles: {
+    icon:'🚗', name:'탈것',
+    items: {
+      car: { icon:'🚗', name:'자동차', svg:`
+        <path d="M60 165 L95 75 L205 75 L240 165 Z" ${STROKE}/>
+        <path d="M150 165 L150 75" ${STROKE}/>
+        <rect x="10" y="165" width="280" height="80" rx="28" ${STROKE}/>
+        <circle cx="85" cy="255" r="34" ${STROKE}/>
+        <circle cx="215" cy="255" r="34" ${STROKE}/>
+        <circle cx="85" cy="255" r="9" fill="#2B2140"/>
+        <circle cx="215" cy="255" r="9" fill="#2B2140"/>
+        <circle cx="272" cy="200" r="10" ${STROKE}/>
+      `},
+      train: { icon:'🚂', name:'기차', svg:`
+        <rect x="55" y="65" width="34" height="55" rx="8" ${STROKE}/>
+        <circle cx="75" cy="45" r="14" ${STROKE}/>
+        <circle cx="100" cy="20" r="18" ${STROKE}/>
+        <rect x="30" y="118" width="255" height="105" rx="22" ${STROKE}/>
+        <circle cx="120" cy="165" r="20" ${STROKE}/>
+        <circle cx="170" cy="165" r="20" ${STROKE}/>
+        <circle cx="220" cy="165" r="20" ${STROKE}/>
+        <rect x="258" y="188" width="26" height="42" rx="8" ${STROKE}/>
+        <circle cx="90" cy="248" r="27" ${STROKE}/>
+        <circle cx="155" cy="248" r="27" ${STROKE}/>
+        <circle cx="220" cy="248" r="27" ${STROKE}/>
+      `},
+      plane: { icon:'✈️', name:'비행기', svg:`
+        <path d="M110 175 L150 65 L198 158 Z" ${STROKE}/>
+        <path d="M35 175 L2 85 L78 155 Z" ${STROKE}/>
+        <ellipse cx="150" cy="178" rx="140" ry="46" ${STROKE}/>
+        <circle cx="260" cy="170" r="15" ${STROKE}/>
+        <circle cx="108" cy="178" r="8" fill="#2B2140"/>
+        <circle cx="140" cy="178" r="8" fill="#2B2140"/>
+        <circle cx="172" cy="178" r="8" fill="#2B2140"/>
+        <circle cx="204" cy="178" r="8" fill="#2B2140"/>
+        <path d="M108 220 L96 255" ${STROKE}/>
+        <path d="M192 220 L204 255" ${STROKE}/>
+        <circle cx="94" cy="262" r="10" ${STROKE}/>
+        <circle cx="206" cy="262" r="10" ${STROKE}/>
+      `},
+      boat: { icon:'⛵', name:'배', svg:`
+        <path d="M150 32 L178 43 L150 54 Z" ${STROKE}/>
+        <path d="M150 200 L150 40" ${STROKE}/>
+        <path d="M150 62 L150 178 L252 158 Z" ${STROKE}/>
+        <path d="M150 75 L150 172 L64 152 Z" ${STROKE}/>
+        <path d="M22 212 L278 212 L238 268 Q150 290 62 268 Z" ${STROKE}/>
+        <path d="M10 220 Q30 205 50 220 Q70 235 90 220" ${STROKE}/>
+        <path d="M210 220 Q230 205 250 220 Q270 235 290 220" ${STROKE}/>
+      `},
+      firetruck: { icon:'🚒', name:'소방차', svg:`
+        <rect x="88" y="73" width="172" height="26" rx="8" ${STROKE}/>
+        <path d="M108 73 L108 99 M138 73 L138 99 M168 73 L168 99 M198 73 L198 99 M228 73 L228 99" ${STROKE}/>
+        <circle cx="268" cy="83" r="15" ${STROKE}/>
+        <rect x="18" y="150" width="264" height="80" rx="24" ${STROKE}/>
+        <rect x="38" y="165" width="58" height="42" rx="10" ${STROKE}/>
+        <rect x="255" y="195" width="24" height="38" rx="6" ${STROKE}/>
+        <circle cx="88" cy="260" r="32" ${STROKE}/>
+        <circle cx="222" cy="260" r="32" ${STROKE}/>
+        <circle cx="88" cy="260" r="8" fill="#2B2140"/>
+        <circle cx="222" cy="260" r="8" fill="#2B2140"/>
+      `}
+    }
   },
-  rabbit: {
-    icon:'🐰', name:'토끼',
-    svg:`
-      <circle cx="150" cy="195" r="78" ${STROKE}/>
-      <ellipse cx="112" cy="70" rx="24" ry="65" ${STROKE}/>
-      <ellipse cx="188" cy="70" rx="24" ry="65" ${STROKE}/>
-      <circle cx="122" cy="185" r="8" fill="#2B2140"/>
-      <circle cx="178" cy="185" r="8" fill="#2B2140"/>
-      <path d="M150 200 L140 212 L160 212 Z" ${STROKE}/>
-      <path d="M50 200 L110 205" ${STROKE}/>
-      <path d="M50 220 L110 216" ${STROKE}/>
-      <path d="M250 200 L190 205" ${STROKE}/>
-      <path d="M250 220 L190 216" ${STROKE}/>
-    `
-  },
-  panda: {
-    icon:'🐼', name:'판다',
-    svg:`
-      <circle cx="150" cy="170" r="90" ${STROKE}/>
-      <circle cx="80" cy="82" r="30" ${STROKE}/>
-      <circle cx="220" cy="82" r="30" ${STROKE}/>
-      <ellipse cx="115" cy="155" rx="26" ry="32" ${STROKE}/>
-      <ellipse cx="185" cy="155" rx="26" ry="32" ${STROKE}/>
-      <circle cx="118" cy="158" r="8" fill="#2B2140"/>
-      <circle cx="182" cy="158" r="8" fill="#2B2140"/>
-      <ellipse cx="150" cy="195" rx="14" ry="10" fill="#2B2140"/>
-      <path d="M150 205 Q150 215 135 218" ${STROKE}/>
-      <path d="M150 205 Q150 215 165 218" ${STROKE}/>
-    `
+  sea: {
+    icon:'🐠', name:'바다생물',
+    items: {
+      fish: { icon:'🐟', name:'물고기', svg:`
+        <path d="M45 165 L5 100 L5 230 Z" ${STROKE}/>
+        <ellipse cx="150" cy="165" rx="115" ry="75" ${STROKE}/>
+        <path d="M120 100 L150 28 L185 105 Z" ${STROKE}/>
+        <path d="M120 230 L150 285 L180 225 Z" ${STROKE}/>
+        <circle cx="210" cy="150" r="13" fill="#2B2140"/>
+        <path d="M175 128 Q198 165 175 202" ${STROKE}/>
+      `},
+      octopus: { icon:'🐙', name:'문어', svg:`
+        <circle cx="150" cy="105" r="100" ${STROKE}/>
+        <circle cx="112" cy="88" r="14" fill="#2B2140"/>
+        <circle cx="188" cy="88" r="14" fill="#2B2140"/>
+        <path d="M138 128 Q150 138 162 128" ${STROKE}/>
+        <path d="M70 178 Q40 225 55 265 Q65 292 35 300" ${STROKE}/>
+        <path d="M100 195 Q80 240 95 272 Q105 296 78 305" ${STROKE}/>
+        <path d="M130 202 Q122 248 135 275 Q142 300 118 306" ${STROKE}/>
+        <path d="M170 202 Q178 248 165 275 Q158 300 182 306" ${STROKE}/>
+        <path d="M200 195 Q220 240 205 272 Q195 296 222 305" ${STROKE}/>
+        <path d="M230 178 Q260 225 245 265 Q235 292 265 300" ${STROKE}/>
+      `},
+      turtle: { icon:'🐢', name:'거북이', svg:`
+        <circle cx="150" cy="150" r="95" ${STROKE}/>
+        <path d="M85 115 Q150 145 215 115" ${STROKE}/>
+        <path d="M70 160 Q150 195 230 160" ${STROKE}/>
+        <path d="M95 205 Q150 225 205 205" ${STROKE}/>
+        <circle cx="150" cy="40" r="38" ${STROKE}/>
+        <circle cx="150" cy="32" r="7" fill="#2B2140"/>
+        <ellipse cx="45" cy="105" rx="38" ry="20" ${STROKE}/>
+        <ellipse cx="255" cy="105" rx="38" ry="20" ${STROKE}/>
+        <ellipse cx="48" cy="210" rx="34" ry="20" ${STROKE}/>
+        <ellipse cx="252" cy="210" rx="34" ry="20" ${STROKE}/>
+        <path d="M135 248 L150 282 L165 248 Z" ${STROKE}/>
+      `},
+      dolphin: { icon:'🐬', name:'돌고래', svg:`
+        <path d="M20 220 Q50 80 160 65 Q245 55 285 105 Q255 130 215 115 Q230 160 200 190 Q150 230 90 215 Q45 230 20 220 Z" ${STROKE}/>
+        <path d="M165 70 L185 8 L205 75 Z" ${STROKE}/>
+        <path d="M20 220 L-15 190 L0 248 Z" ${STROKE}/>
+        <path d="M130 195 L108 232 L152 210 Z" ${STROKE}/>
+        <circle cx="248" cy="95" r="9" fill="#2B2140"/>
+      `},
+      starfish: { icon:'⭐', name:'불가사리', svg:`
+        <path d="M150 20 L184.1 107.1 L278.4 113.3 L205.2 172.9 L229.4 264.2 L150 213 L70.6 264.2 L94.8 172.9 L21.6 113.3 L115.9 107.1 Z" ${STROKE}/>
+        <circle cx="132" cy="118" r="9" fill="#2B2140"/>
+        <circle cx="168" cy="118" r="9" fill="#2B2140"/>
+        <circle cx="150" cy="160" r="9" fill="#2B2140"/>
+      `}
+    }
   }
 };
 
 const COLORS = ['#FF6F59','#FFC93F','#4CB963','#3AA6FF','#A66CFF','#FF8FB3','#8D6E63','#2B2140','#FFFFFF'];
 
 /* ===================== 상태 ===================== */
-let currentAnimal = 'bear';
+let currentCategory = 'animals';
+let currentItem = 'bear';
 let currentColor = COLORS[0];
 let brushSize = 20;
 let isEraser = false;
@@ -240,6 +451,9 @@ let lastX = 0, lastY = 0;
 const canvas = document.getElementById('paintCanvas');
 const ctx = canvas.getContext('2d');
 const outlineSvg = document.getElementById('outlineSvg');
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalTitle = document.getElementById('modalTitle');
+const itemGrid = document.getElementById('itemGrid');
 
 /* ===================== 캔버스 크기 세팅 ===================== */
 function setupCanvas(){
@@ -251,27 +465,56 @@ function setupCanvas(){
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
 }
-
 function clearCanvas(){
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
-/* ===================== 동물 탭 ===================== */
-const tabsEl = document.getElementById('animalTabs');
-Object.keys(ANIMALS).forEach(key => {
+/* ===================== 카테고리 큰 버튼 4개 ===================== */
+const categoryRowEl = document.getElementById('categoryRow');
+Object.keys(CATEGORIES).forEach(catKey => {
+  const cat = CATEGORIES[catKey];
   const btn = document.createElement('div');
-  btn.className = 'tab' + (key === currentAnimal ? ' active' : '');
-  btn.textContent = ANIMALS[key].icon;
-  btn.dataset.key = key;
-  btn.onclick = () => selectAnimal(key);
-  tabsEl.appendChild(btn);
+  btn.className = 'cat-btn' + (catKey === currentCategory ? ' active' : '');
+  btn.dataset.cat = catKey;
+  btn.innerHTML = `<div class="cat-icon">${cat.icon}</div><div class="cat-name">${cat.name}</div><div class="cur-item" data-curitem></div>`;
+  btn.onclick = () => openPicker(catKey);
+  categoryRowEl.appendChild(btn);
 });
 
-function selectAnimal(key){
-  currentAnimal = key;
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
-  outlineSvg.innerHTML = ANIMALS[key].svg;
+function updateCategoryButtons(){
+  document.querySelectorAll('.cat-btn').forEach(btn => {
+    const key = btn.dataset.cat;
+    btn.classList.toggle('active', key === currentCategory);
+    const curItemEl = btn.querySelector('[data-curitem]');
+    curItemEl.textContent = (key === currentCategory) ? CATEGORIES[key].items[currentItem].name : '';
+  });
+}
+
+/* ===================== 그림 고르기 모달 ===================== */
+function openPicker(catKey){
+  modalTitle.textContent = `${CATEGORIES[catKey].icon} ${CATEGORIES[catKey].name} 고르기`;
+  itemGrid.innerHTML = '';
+  Object.keys(CATEGORIES[catKey].items).forEach(itemKey => {
+    const item = CATEGORIES[catKey].items[itemKey];
+    const isActive = (catKey === currentCategory && itemKey === currentItem);
+    const btn = document.createElement('div');
+    btn.className = 'item-btn' + (isActive ? ' active' : '');
+    btn.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>`;
+    btn.onclick = () => { selectItem(catKey, itemKey); closePicker(); };
+    itemGrid.appendChild(btn);
+  });
+  modalBackdrop.classList.add('show');
+}
+function closePicker(){ modalBackdrop.classList.remove('show'); }
+document.getElementById('modalClose').onclick = closePicker;
+modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) closePicker(); });
+
+function selectItem(catKey, itemKey){
+  currentCategory = catKey;
+  currentItem = itemKey;
+  outlineSvg.innerHTML = CATEGORIES[catKey].items[itemKey].svg;
   clearCanvas();
+  updateCategoryButtons();
 }
 
 /* ===================== 색상 팔레트 ===================== */
@@ -313,7 +556,6 @@ function getPos(e){
   const point = e.touches ? e.touches[0] : e;
   return { x: point.clientX - rect.left, y: point.clientY - rect.top };
 }
-
 function startDraw(e){
   e.preventDefault();
   drawing = true;
@@ -328,9 +570,7 @@ function moveDraw(e){
   drawLine(lastX, lastY, p.x, p.y);
   lastX = p.x; lastY = p.y;
 }
-function endDraw(e){
-  drawing = false;
-}
+function endDraw(){ drawing = false; }
 
 function drawDot(x, y){
   ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
@@ -359,7 +599,7 @@ canvas.addEventListener('touchend', endDraw);
 /* ===================== 초기화 ===================== */
 window.addEventListener('resize', () => { setupCanvas(); });
 setupCanvas();
-selectAnimal('bear');
+selectItem('animals', 'bear');
 </script>
 </body>
 </html>

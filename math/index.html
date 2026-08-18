@@ -263,18 +263,19 @@
 
   .hidden{display:none !important;}
 
-  body{ align-items:flex-start; padding-top:28px; padding-bottom:40px; }
-  .back-link{
-    display:flex; align-items:center; justify-content:center; gap:6px;
-    width:100%; max-width:480px; margin:18px auto 0;
-    background:rgba(255,255,255,0.6); border:2px solid rgba(30,41,59,0.12);
-    color:var(--ink); text-decoration:none;
-    font-family:'Gaegu', sans-serif; font-weight:700;
-    font-size:14px; padding:12px 16px; border-radius:16px;
+  /* 뒤로가기 - 떠있는 작은 버튼 (문서 흐름을 차지하지 않아 게임 화면이 줄어들지 않음) */
+  .back-fab{
+    position:fixed; top:12px; left:12px; z-index:30;
+    width:42px; height:42px; border-radius:50%;
+    background:#fff; box-shadow:0 4px 0 rgba(30,41,59,0.12);
+    display:flex; align-items:center; justify-content:center;
+    font-size:18px; text-decoration:none; color:var(--ink);
   }
 </style>
 </head>
 <body>
+
+<a class="back-fab" href="../index.html">←</a>
 
 <div id="app">
   <div class="path" id="path"></div>
@@ -329,8 +330,6 @@
 
   </div>
 </div>
-
-<a class="back-link" href="../index.html">← 미니게임으로 돌아가기</a>
 
 <script>
 /* ===================== 설정 ===================== */

@@ -1,1 +1,365 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>동물 색칠놀이</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#FFE8D6;
+    --sky-bottom:#FFF6DF;
+    --ink:#2B2140;
+    --card-bg:#FFFFFF;
+    --coral:#FF6F59;
+    --leaf:#4CB963;
+    --skyblue:#3AA6FF;
+    --grape:#A66CFF;
+    --lemon:#FFC93F;
+    --shadow: 0 8px 0 rgba(43,33,64,0.12);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; height:100%;}
+  body{
+    min-height:100vh;
+    font-family:'Gowun Dodum', sans-serif;
+    background: linear-gradient(180deg, var(--sky-top) 0%, var(--sky-bottom) 65%);
+    color:var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:24px 16px 40px;
+    -webkit-user-select:none; user-select:none;
+    touch-action:none;
+    overscroll-behavior:none;
+  }
+  header{ text-align:center; margin-bottom:16px; }
+  h1{
+    font-family:'Jua', sans-serif;
+    font-size:clamp(24px, 7vw, 32px);
+    margin:0 0 4px;
+  }
+  header p{ margin:0; font-size:13px; opacity:.7; }
 
+  .animal-tabs{
+    display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap; justify-content:center;
+    max-width:360px;
+  }
+  .tab{
+    width:48px; height:48px; border-radius:14px; border:3px solid transparent;
+    background:#fff; box-shadow:var(--shadow); font-size:24px;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .tab.active{ border-color:var(--coral); transform:translateY(2px); box-shadow:0 4px 0 rgba(43,33,64,0.12); }
+
+  .canvas-wrap{
+    position:relative;
+    width:min(340px, 88vw);
+    height:min(340px, 88vw);
+    background:#fff;
+    border-radius:26px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+    touch-action:none;
+  }
+  #paintCanvas{
+    position:absolute; top:0; left:0; width:100%; height:100%; touch-action:none;
+  }
+  #outlineSvg{
+    position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none;
+  }
+
+  .toolbar{
+    width:min(340px, 88vw);
+    margin-top:16px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  .palette{
+    display:flex; gap:8px; flex-wrap:wrap; justify-content:center;
+    background:#fff; border-radius:18px; padding:12px; box-shadow:var(--shadow);
+  }
+  .swatch{
+    width:30px; height:30px; border-radius:50%; border:3px solid #fff;
+    box-shadow:0 0 0 2px rgba(43,33,64,0.15); cursor:pointer; flex-shrink:0;
+  }
+  .swatch.active{ box-shadow:0 0 0 3px var(--ink); transform:scale(1.1); }
+
+  .row{
+    display:flex; gap:8px; justify-content:center;
+  }
+  .btn{
+    flex:1;
+    font-family:'Jua', sans-serif;
+    font-size:13px;
+    color:var(--ink);
+    background:#fff;
+    border:none;
+    border-radius:14px;
+    padding:12px 8px;
+    box-shadow:var(--shadow);
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn:active{ transform:translateY(4px); box-shadow:0 2px 0 rgba(43,33,64,0.12); }
+  .btn.active{ background:var(--lemon); }
+  .btn.danger{ color:#fff; background:var(--coral); }
+
+  .back-link{
+    display:flex; align-items:center; justify-content:center; gap:6px;
+    width:min(340px, 88vw); margin:24px auto 0;
+    background:rgba(255,255,255,0.7); border:2px solid rgba(43,33,64,0.12);
+    color:#2B2140; text-decoration:none;
+    font-family:'Gowun Dodum', sans-serif;
+    font-size:13.5px; font-weight:700; padding:14px 16px; border-radius:16px;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>🎨 동물 색칠놀이</h1>
+    <p>손가락으로 자유롭게 칠해봐요</p>
+  </header>
+
+  <div class="animal-tabs" id="animalTabs"></div>
+
+  <div class="canvas-wrap">
+    <canvas id="paintCanvas"></canvas>
+    <svg id="outlineSvg" viewBox="0 0 300 300"></svg>
+  </div>
+
+  <div class="toolbar">
+    <div class="palette" id="palette"></div>
+    <div class="row">
+      <button class="btn" data-size="10">● 얇게</button>
+      <button class="btn active" data-size="20">● 보통</button>
+      <button class="btn" data-size="34">● 굵게</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="eraserBtn">🧹 지우개</button>
+      <button class="btn danger" id="clearBtn">🔄 다시 칠하기</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="../index.html">← 미니게임으로 돌아가기</a>
+
+<script>
+/* ===================== 동물 윤곽선 (SVG) ===================== */
+const STROKE = 'stroke="#2B2140" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"';
+
+const ANIMALS = {
+  bear: {
+    icon:'🐻', name:'곰돌이',
+    svg:`
+      <ellipse cx="150" cy="170" rx="88" ry="80" ${STROKE}/>
+      <circle cx="82" cy="90" r="30" ${STROKE}/>
+      <circle cx="218" cy="90" r="30" ${STROKE}/>
+      <circle cx="82" cy="90" r="10" ${STROKE}/>
+      <circle cx="218" cy="90" r="10" ${STROKE}/>
+      <ellipse cx="150" cy="190" rx="42" ry="32" ${STROKE}/>
+      <circle cx="150" cy="172" r="9" fill="#2B2140"/>
+      <circle cx="122" cy="158" r="7" fill="#2B2140"/>
+      <circle cx="178" cy="158" r="7" fill="#2B2140"/>
+      <path d="M150 181 Q150 200 132 205" ${STROKE}/>
+      <path d="M150 181 Q150 200 168 205" ${STROKE}/>
+    `
+  },
+  cat: {
+    icon:'🐱', name:'고양이',
+    svg:`
+      <circle cx="150" cy="165" r="92" ${STROKE}/>
+      <path d="M78 100 L60 40 L120 78 Z" ${STROKE}/>
+      <path d="M222 100 L240 40 L180 78 Z" ${STROKE}/>
+      <circle cx="112" cy="150" r="8" fill="#2B2140"/>
+      <circle cx="188" cy="150" r="8" fill="#2B2140"/>
+      <path d="M150 172 L140 186 L160 186 Z" ${STROKE}/>
+      <path d="M150 186 Q150 198 150 198" ${STROKE}/>
+      <path d="M40 165 L100 172" ${STROKE}/>
+      <path d="M40 190 L100 185" ${STROKE}/>
+      <path d="M260 165 L200 172" ${STROKE}/>
+      <path d="M260 190 L200 185" ${STROKE}/>
+    `
+  },
+  dog: {
+    icon:'🐶', name:'강아지',
+    svg:`
+      <ellipse cx="150" cy="175" rx="86" ry="78" ${STROKE}/>
+      <path d="M84 100 Q40 130 58 200 Q90 190 100 140 Z" ${STROKE}/>
+      <path d="M216 100 Q260 130 242 200 Q210 190 200 140 Z" ${STROKE}/>
+      <circle cx="120" cy="160" r="8" fill="#2B2140"/>
+      <circle cx="180" cy="160" r="8" fill="#2B2140"/>
+      <ellipse cx="150" cy="205" rx="34" ry="26" ${STROKE}/>
+      <ellipse cx="150" cy="192" rx="12" ry="9" fill="#2B2140"/>
+      <path d="M150 201 Q150 215 130 218" ${STROKE}/>
+      <path d="M150 201 Q150 215 170 218" ${STROKE}/>
+    `
+  },
+  rabbit: {
+    icon:'🐰', name:'토끼',
+    svg:`
+      <circle cx="150" cy="195" r="78" ${STROKE}/>
+      <ellipse cx="112" cy="70" rx="24" ry="65" ${STROKE}/>
+      <ellipse cx="188" cy="70" rx="24" ry="65" ${STROKE}/>
+      <circle cx="122" cy="185" r="8" fill="#2B2140"/>
+      <circle cx="178" cy="185" r="8" fill="#2B2140"/>
+      <path d="M150 200 L140 212 L160 212 Z" ${STROKE}/>
+      <path d="M50 200 L110 205" ${STROKE}/>
+      <path d="M50 220 L110 216" ${STROKE}/>
+      <path d="M250 200 L190 205" ${STROKE}/>
+      <path d="M250 220 L190 216" ${STROKE}/>
+    `
+  },
+  panda: {
+    icon:'🐼', name:'판다',
+    svg:`
+      <circle cx="150" cy="170" r="90" ${STROKE}/>
+      <circle cx="80" cy="82" r="30" ${STROKE}/>
+      <circle cx="220" cy="82" r="30" ${STROKE}/>
+      <ellipse cx="115" cy="155" rx="26" ry="32" ${STROKE}/>
+      <ellipse cx="185" cy="155" rx="26" ry="32" ${STROKE}/>
+      <circle cx="118" cy="158" r="8" fill="#2B2140"/>
+      <circle cx="182" cy="158" r="8" fill="#2B2140"/>
+      <ellipse cx="150" cy="195" rx="14" ry="10" fill="#2B2140"/>
+      <path d="M150 205 Q150 215 135 218" ${STROKE}/>
+      <path d="M150 205 Q150 215 165 218" ${STROKE}/>
+    `
+  }
+};
+
+const COLORS = ['#FF6F59','#FFC93F','#4CB963','#3AA6FF','#A66CFF','#FF8FB3','#8D6E63','#2B2140','#FFFFFF'];
+
+/* ===================== 상태 ===================== */
+let currentAnimal = 'bear';
+let currentColor = COLORS[0];
+let brushSize = 20;
+let isEraser = false;
+let drawing = false;
+let lastX = 0, lastY = 0;
+
+const canvas = document.getElementById('paintCanvas');
+const ctx = canvas.getContext('2d');
+const outlineSvg = document.getElementById('outlineSvg');
+
+/* ===================== 캔버스 크기 세팅 ===================== */
+function setupCanvas(){
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function clearCanvas(){
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+}
+
+/* ===================== 동물 탭 ===================== */
+const tabsEl = document.getElementById('animalTabs');
+Object.keys(ANIMALS).forEach(key => {
+  const btn = document.createElement('div');
+  btn.className = 'tab' + (key === currentAnimal ? ' active' : '');
+  btn.textContent = ANIMALS[key].icon;
+  btn.dataset.key = key;
+  btn.onclick = () => selectAnimal(key);
+  tabsEl.appendChild(btn);
+});
+
+function selectAnimal(key){
+  currentAnimal = key;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.key === key));
+  outlineSvg.innerHTML = ANIMALS[key].svg;
+  clearCanvas();
+}
+
+/* ===================== 색상 팔레트 ===================== */
+const paletteEl = document.getElementById('palette');
+COLORS.forEach((c, i) => {
+  const sw = document.createElement('div');
+  sw.className = 'swatch' + (i === 0 ? ' active' : '');
+  sw.style.background = c;
+  if (c === '#FFFFFF') sw.style.boxShadow = '0 0 0 2px rgba(43,33,64,0.3)';
+  sw.onclick = () => {
+    currentColor = c;
+    isEraser = false;
+    document.querySelectorAll('.swatch').forEach(s => s.classList.remove('active'));
+    sw.classList.add('active');
+    document.getElementById('eraserBtn').classList.remove('active');
+  };
+  paletteEl.appendChild(sw);
+});
+
+/* ===================== 브러시 크기 ===================== */
+document.querySelectorAll('[data-size]').forEach(btn => {
+  btn.onclick = () => {
+    brushSize = Number(btn.dataset.size);
+    document.querySelectorAll('[data-size]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  };
+});
+
+/* ===================== 지우개 / 다시 칠하기 ===================== */
+document.getElementById('eraserBtn').onclick = (e) => {
+  isEraser = !isEraser;
+  e.currentTarget.classList.toggle('active', isEraser);
+};
+document.getElementById('clearBtn').onclick = clearCanvas;
+
+/* ===================== 그리기 ===================== */
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  const point = e.touches ? e.touches[0] : e;
+  return { x: point.clientX - rect.left, y: point.clientY - rect.top };
+}
+
+function startDraw(e){
+  e.preventDefault();
+  drawing = true;
+  const p = getPos(e);
+  lastX = p.x; lastY = p.y;
+  drawDot(p.x, p.y);
+}
+function moveDraw(e){
+  if (!drawing) return;
+  e.preventDefault();
+  const p = getPos(e);
+  drawLine(lastX, lastY, p.x, p.y);
+  lastX = p.x; lastY = p.y;
+}
+function endDraw(e){
+  drawing = false;
+}
+
+function drawDot(x, y){
+  ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+  ctx.fillStyle = currentColor;
+  ctx.beginPath();
+  ctx.arc(x, y, brushSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+}
+function drawLine(x0, y0, x1, y1){
+  ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+  ctx.strokeStyle = currentColor;
+  ctx.lineWidth = brushSize;
+  ctx.beginPath();
+  ctx.moveTo(x0, y0);
+  ctx.lineTo(x1, y1);
+  ctx.stroke();
+}
+
+canvas.addEventListener('mousedown', startDraw);
+canvas.addEventListener('mousemove', moveDraw);
+window.addEventListener('mouseup', endDraw);
+canvas.addEventListener('touchstart', startDraw, { passive:false });
+canvas.addEventListener('touchmove', moveDraw, { passive:false });
+canvas.addEventListener('touchend', endDraw);
+
+/* ===================== 초기화 ===================== */
+window.addEventListener('resize', () => { setupCanvas(); });
+setupCanvas();
+selectAnimal('bear');
+</script>
+</body>
+</html>
